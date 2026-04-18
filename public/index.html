@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NexTrack | AI Delivery Tracking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Main Navigation -->
+    <nav class="navbar">
+        <div class="logo">NexTrack <span>AI</span></div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="services.html">Services</a>
+            <a href="contact.html">Contact</a>
+        </div>
+    </nav>
+
+    <!-- Hero / Search Section -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Intelligent Shipping Tracking</h1>
+            <p>Powered by Fuzzy Logic to give you the most accurate real-time ETA under any conditions.</p>
+            <form id="tracking-form" class="search-box">
+                <input type="text" id="tracking-input" placeholder="Enter Tracking ID (e.g. SHP12345)" required>
+                <button type="submit" id="track-btn">Track Package</button>
+            </form>
+            <div id="error-message" class="error-msg hidden"></div>
+        </div>
+    </header>
+
+    <!-- Tracking Results Section (Hidden by default) -->
+    <section id="tracking-results" class="results-container hidden">
+        
+        <div class="card result-header">
+            <h2>Status: <span id="res-status" class="status-badge">In Transit</span></h2>
+            <div class="route-info">
+                <div>
+                    <p class="label">Origin</p>
+                    <p class="value" id="res-origin">New York, NY</p>
+                </div>
+                <div class="line"></div>
+                <div>
+                    <p class="label">Destination</p>
+                    <p class="value" id="res-destination">Los Angeles, CA</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- AI Prediction Card -->
+            <div class="card ai-card">
+                <h3>⚡ AI Estimated Delivery</h3>
+                <div class="eta-box">
+                    <p class="eta-time" id="res-eta">2 Days</p>
+                    <p class="eta-status" id="res-fuzzy-status">On Time</p>
+                </div>
+                <p class="disclaimer">Calculated using live weather and traffic data.</p>
+            </div>
+
+            <!-- Conditions Card -->
+            <div class="card conditions-card">
+                <h3>Live Conditions</h3>
+                <ul>
+                    <li><strong>Location:</strong> <span id="res-location">Kansas City, MO</span></li>
+                    <li><strong>Weather:</strong> <span id="res-weather">Clear</span></li>
+                    <li><strong>Traffic:</strong> <span id="res-traffic">Low</span></li>
+                    <li><strong>Distance Left:</strong> <span id="res-distance">1500 miles</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="card timeline-card">
+            <h3>Tracking History</h3>
+            <ul class="timeline" id="res-history">
+                <!-- Dynamically populated -->
+            </ul>
+        </div>
+    </section>
+
+    <!-- Floating Chatbot Widget -->
+    <div id="chatbot-widget" class="chatbot-container">
+        <button id="chatbot-toggle" class="chat-btn">💬 Chat Support</button>
+        <div id="chat-window" class="chat-window hidden">
+            <div class="chat-header">
+                <h4>NexTrack Assistant</h4>
+                <button id="chat-close" class="close-btn">&times;</button>
+            </div>
+            <div id="chat-body" class="chat-body">
+                <div class="message bot">Hello! Enter your Tracking ID to get started, then ask me anything about your package.</div>
+            </div>
+            <div class="chat-footer">
+                <input type="text" id="chat-input" placeholder="Type a message...">
+                <button id="chat-send">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

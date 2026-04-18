@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Services - NexTrack | AI Delivery Tracking</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .services-container {
+            max-width: 1200px;
+            margin: 4rem auto;
+            padding: 0 2rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .services-header {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .services-header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            background: -webkit-linear-gradient(45deg, #60A5FA, #A78BFA);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .services-header p {
+            color: var(--text-muted);
+            font-size: 1.2rem;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .service-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 2.5rem 2rem;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-align: center;
+        }
+
+        .service-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+            border-color: rgba(79, 70, 229, 0.4);
+        }
+
+        .service-icon {
+            font-size: 3rem;
+            margin-bottom: 1.5rem;
+            display: inline-block;
+            background: linear-gradient(135deg, rgba(79, 70, 229, 0.2), rgba(16, 185, 129, 0.2));
+            width: 80px;
+            height: 80px;
+            line-height: 80px;
+            border-radius: 50%;
+            color: #60A5FA;
+        }
+
+        .service-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .service-card p {
+            color: var(--text-muted);
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Navigation -->
+    <nav class="navbar">
+        <div class="logo">NexTrack <span>AI</span></div>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="services.html" style="color: var(--primary);">Services</a>
+            <a href="contact.html">Contact</a>
+        </div>
+    </nav>
+
+    <!-- Services Content -->
+    <section class="services-container">
+        <div class="services-header">
+            <h1>Our AI-Powered Services</h1>
+            <p>Experience the future of logistics with our cutting-edge tracking solutions powered by Fuzzy Logic and adaptive learning algorithms.</p>
+        </div>
+
+        <div class="services-grid">
+            <div class="service-card">
+                <div class="service-icon">⚡</div>
+                <h3>Fuzzy Logic ETA</h3>
+                <p>We use Scikit-Fuzzy to calculate highly accurate delivery times by analyzing varying conditions like weather intensity and dynamic traffic flow in real-time.</p>
+            </div>
+
+            <div class="service-card">
+                <div class="service-icon">🌍</div>
+                <h3>Global Live Tracking</h3>
+                <p>Monitor your package anywhere in the world. Our platform provides precise geolocations mapped accurately with predictive routing.</p>
+            </div>
+
+            <div class="service-card">
+                <div class="service-icon">💬</div>
+                <h3>Smart Assistant</h3>
+                <p>Our conversational AI chatbot is available 24/7. Ask questions in natural language to instantly know where your shipment is without navigating complex menus.</p>
+            </div>
+
+            <div class="service-card">
+                <div class="service-icon">🛡️</div>
+                <h3>Secure Logistics</h3>
+                <p>Your tracking data is end-to-end encrypted. We ensure that only authorized recipients have transparent access to delivery information.</p>
+            </div>
+            
+            <div class="service-card">
+                <div class="service-icon">📊</div>
+                <h3>Analytics Dashboard</h3>
+                <p>For enterprise users, get comprehensive insights into shipping delays, carrier performance, and bottleneck predictions to optimize supply chains.</p>
+            </div>
+
+            <div class="service-card">
+                <div class="service-icon">🔔</div>
+                <h3>Proactive Alerts</h3>
+                <p>Never miss an update. Receive automated push notifications and SMS alerts whenever there is a critical status change or an unexpected delay.</p>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

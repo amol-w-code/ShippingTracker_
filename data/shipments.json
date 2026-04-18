@@ -1,0 +1,45 @@
+{
+  "SHP12345": {
+    "TrackingID": "SHP12345",
+    "Origin": "New York, NY",
+    "Destination": "Los Angeles, CA",
+    "CurrentLocation": "Kansas City, MO",
+    "Status": "In Transit",
+    "DistanceRemaining": 1500,
+    "WeatherCondition": "Storm",
+    "TrafficCongestion": "Low",
+    "HistoryEvents": [
+      {"timestamp": "2026-04-14 08:00 AM", "event": "Picked up by courier", "location": "New York, NY"},
+      {"timestamp": "2026-04-15 10:00 AM", "event": "Departed processing facility", "location": "Chicago, IL"},
+      {"timestamp": "2026-04-16 02:00 PM", "event": "Arrived at sorting hub", "location": "Kansas City, MO"}
+    ]
+  },
+  "SHP98765": {
+    "TrackingID": "SHP98765",
+    "Origin": "Austin, TX",
+    "Destination": "Dallas, TX",
+    "CurrentLocation": "Austin, TX",
+    "Status": "Out for Delivery",
+    "DistanceRemaining": 20,
+    "WeatherCondition": "Clear",
+    "TrafficCongestion": "High",
+    "HistoryEvents": [
+      {"timestamp": "2026-04-15 08:00 PM", "event": "Parcel scanned at destination facility", "location": "Austin Hub"},
+      {"timestamp": "2026-04-16 06:00 AM", "event": "Out for Delivery", "location": "Austin, TX"}
+    ]
+  },
+  "SHP44556": {
+    "TrackingID": "SHP44556",
+    "Origin": "Seattle, WA",
+    "Destination": "Miami, FL",
+    "CurrentLocation": "Denver, CO",
+    "Status": "Delayed",
+    "DistanceRemaining": 2000,
+    "WeatherCondition": "Clear",
+    "TrafficCongestion": "Medium",
+    "HistoryEvents": [
+      {"timestamp": "2026-04-10 09:00 AM", "event": "Package Accepted", "location": "Seattle, WA"},
+      {"timestamp": "2026-04-12 11:30 AM", "event": "In Transit", "location": "Salt Lake City, UT"}
+    ]
+  }
+}
