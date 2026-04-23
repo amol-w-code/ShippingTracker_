@@ -74,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
             resLocation.innerText = data.CurrentLocation;
             resWeather.innerText = data.WeatherCondition;
             resTraffic.innerText = data.TrafficCongestion;
-            resDistance.innerText = `${data.DistanceRemaining} miles`;
+            resDistance.innerText = `${data.DistanceRemaining} km`;
 
             // History Timeline
             resHistory.innerHTML = '';
