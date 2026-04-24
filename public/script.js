@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
     // --- Scrollytelling Logic ---
     const canvas = document.getElementById('scrolly-canvas');
     const context = canvas.getContext('2d');
@@ -77,36 +80,40 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     requestAnimationFrame(animate);
 
-    // Scroll listener for target frame index
-    window.addEventListener('scroll', () => {
+    function updateScrollState() {
+        // Don't update if an overlay is active
+        if (document.querySelector('.overlay-page.active')) return;
+
         const scrollTop = window.scrollY;
         const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
         const scrollFraction = Math.max(0, Math.min(1, scrollTop / scrollHeight));
 
         targetFrameIndex = scrollFraction * (frameCount - 1);
 
-        // Toggle landed state for Step 5 layout transformation
-        // Step 5 is the 5th section out of 5, so around 80%+ scroll
+        // Toggle landed state
         document.body.classList.toggle('landed', scrollFraction > 0.78);
 
         // Step activation and parallax
         steps.forEach((step) => {
             const rect = step.getBoundingClientRect();
             const glassCard = step.querySelector('.glass-card');
-
+            
             if (rect.top < window.innerHeight * 0.7 && rect.bottom > window.innerHeight * 0.3) {
                 step.classList.add('active');
-
+                
                 if (glassCard) {
-                    const relativePos = (rect.top + rect.height / 2) / window.innerHeight;
+                    const relativePos = (rect.top + rect.height/2) / window.innerHeight;
                     const moveY = (relativePos - 0.5) * 60;
-                    glassCard.style.transform = `translateY(${moveY}px) rotate(${(relativePos - 0.5) * 10}deg)`;
+                    glassCard.style.transform = `translateY(${moveY}px) rotate(${ (relativePos - 0.5) * 10 }deg)`;
                 }
             } else {
                 step.classList.remove('active');
             }
         });
-    });
+    }
+
+    // Scroll listener
+    window.addEventListener('scroll', updateScrollState);
 
     // --- Tracking Logic ---
     const trackForm = document.getElementById('tracking-form');
@@ -157,35 +164,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Populate dashboard
             currentTrackingId = id;
-
             resStatus.innerText = data.Status;
-
-            // Adjust color based on status
-            if (data.Status === 'Delayed') resStatus.style.color = '#ef4444';
-            else if (data.Status === 'Out for Delivery') resStatus.style.color = '#10B981';
-            else resStatus.style.color = '#60A5FA';
-
             resOrigin.innerText = data.Origin;
             resDest.innerText = data.Destination;
-
-            // Fuzzy Prediction Data
             resEta.innerText = data.prediction.etaFormatted;
             resFuzzyStatus.innerText = data.prediction.fuzzyStatus;
-
-            // Highlight negative delays
-            if (data.prediction.fuzzyStatus.includes('Delay')) {
-                resFuzzyStatus.style.color = '#ef4444';
-            } else {
-                resFuzzyStatus.style.color = '#10B981';
-            }
-
-            // Conditions
             resLocation.innerText = data.CurrentLocation;
             resWeather.innerText = data.WeatherCondition;
             resTraffic.innerText = data.TrafficCongestion;
             resDistance.innerText = `${data.DistanceRemaining} km`;
 
-            // History Timeline
             resHistory.innerHTML = '';
             data.HistoryEvents.forEach(evt => {
                 const li = document.createElement('li');
@@ -197,13 +185,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 resHistory.appendChild(li);
             });
 
-            // Show results
-            resultsContainer.classList.remove('hidden');
-
-            // Smooth scroll to results
-            setTimeout(() => {
-                resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+            // Show results in isolated view
+            document.body.classList.add('results-view');
+            document.body.classList.remove('no-scroll');
+            window.scrollTo(0, 0); // Scroll to top of results
 
         } catch (err) {
             errorMsg.innerText = err.message;
@@ -211,6 +196,27 @@ document.addEventListener('DOMContentLoaded', () => {
         } finally {
             trackBtn.innerText = "Track Package";
             trackBtn.disabled = false;
+        }
+    });
+
+    // --- Logo Navigation Logic ---
+    const logoBtn = document.getElementById('logo-btn');
+    logoBtn.addEventListener('click', () => {
+        // If in results view, go back to Step 5
+        if (document.body.classList.contains('results-view')) {
+            document.body.classList.remove('results-view');
+            const step5 = document.getElementById('step5');
+            step5.scrollIntoView({ behavior: 'smooth' });
+            return;
+        }
+
+        // If in Step 5 (landed), go to Step 1
+        if (document.body.classList.contains('landed')) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            // Otherwise, go to Step 5
+            const step5 = document.getElementById('step5');
+            step5.scrollIntoView({ behavior: 'smooth' });
         }
     });
 
@@ -236,11 +242,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const addMessage = (message, sender) => {
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('message', sender);
-
-        // Parse simple markdown-like bold text **text** to HTML
         let formattedMsg = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         msgDiv.innerHTML = formattedMsg;
-
         chatBody.appendChild(msgDiv);
         chatBody.scrollTop = chatBody.scrollHeight;
     };
@@ -249,7 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const message = chatInput.value.trim();
         if (!message) return;
 
-        // User message
         addMessage(message, 'user');
         chatInput.value = '';
         chatInput.disabled = true;
@@ -260,19 +262,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: message,
-                    trackingId: currentTrackingId // Send current context context
+                    trackingId: currentTrackingId
                 })
             });
-
-            // Check if response is JSON
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                throw new Error("Unable to connect to the server.");
-            }
-
             const data = await response.json();
-
-            // Bot response
             addMessage(data.reply, 'bot');
         } catch (err) {
             addMessage("Sorry, I'm having trouble connecting to the server.", 'bot');
@@ -285,6 +278,41 @@ document.addEventListener('DOMContentLoaded', () => {
     chatSend.addEventListener('click', handleSendMessage);
     chatInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleSendMessage();
+    });
+
+    // --- Overlay Navigation Logic ---
+    const menuLinks = document.querySelectorAll('.side-menu a');
+    const overlayPages = document.querySelectorAll('.overlay-page');
+    const closeOverlayBtns = document.querySelectorAll('.close-overlay, .back-btn');
+
+    menuLinks.forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = link.getAttribute('href').substring(1); 
+            const targetPage = document.getElementById(`${targetId}-page`);
+            if (targetPage) {
+                targetPage.classList.add('active');
+                document.body.classList.add('no-scroll');
+            }
+        });
+    });
+
+    closeOverlayBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            overlayPages.forEach(page => page.classList.remove('active'));
+            document.body.classList.remove('no-scroll');
+            updateScrollState();
+        });
+    });
+
+    overlayPages.forEach(page => {
+        page.addEventListener('click', (e) => {
+            if (e.target === page) {
+                page.classList.remove('active');
+                document.body.classList.remove('no-scroll');
+                updateScrollState();
+            }
+        });
     });
 
 });
