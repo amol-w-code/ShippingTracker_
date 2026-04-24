@@ -63,7 +63,12 @@
                     <h2>Ready to Track?</h2>
                     <p>Enter your Tracking ID below to see our AI in action.</p>
                     <form id="tracking-form" class="search-box">
-                        <input type="text" id="tracking-input" placeholder="Enter Tracking ID (e.g. SHP12345)" required>
+                        <div class="input-wrapper-tracking">
+                            <input type="text" id="tracking-input" placeholder="Enter Tracking ID (e.g. SHP12345)" required>
+                            <button type="button" id="clear-btn" class="clear-tracking-btn hidden">
+                                <i data-lucide="x"></i>
+                            </button>
+                        </div>
                         <button type="submit" id="track-btn">Track Package</button>
                     </form>
                     <div id="error-message" class="error-msg hidden"></div>
@@ -72,8 +77,7 @@
         </div>
     </section>
 
-
-    <!-- Tracking Results Section (Hidden by default) -->
+    <!-- Tracking Results Section (Now part of the main flow) -->
     <section id="tracking-results" class="results-container hidden">
 
         <div class="card result-header">
@@ -125,19 +129,34 @@
 
     <!-- Floating Chatbot Widget -->
     <div id="chatbot-widget" class="chatbot-container">
-        <button id="chatbot-toggle" class="chat-btn">🤖</button>
+        <button id="chatbot-toggle" class="chat-btn">
+            <i data-lucide="message-square"></i>
+            <span class="pulse"></span>
+        </button>
         <div id="chat-window" class="chat-window hidden">
             <div class="chat-header">
-                <h4>NexTrack Bot</h4>
-                <button id="chat-close" class="close-btn">&times;</button>
+                <div class="bot-info">
+                    <div class="bot-avatar">
+                        <i data-lucide="bot"></i>
+                        <span class="status-dot"></span>
+                    </div>
+                    <div class="bot-text">
+                        <h4>NexTrack AI</h4>
+                        <span class="bot-status">Online & Ready</span>
+                    </div>
+                </div>
+                <button id="chat-close" class="close-btn"><i data-lucide="x"></i></button>
             </div>
             <div id="chat-body" class="chat-body">
-                <div class="message bot">Hello! Enter your Tracking ID to get started, then ask me anything about your
-                    package.</div>
+                <div class="message bot">
+                    Hello! I'm your NexTrack AI assistant. Enter your Tracking ID to get started, or ask me anything about our services!
+                </div>
             </div>
             <div class="chat-footer">
-                <input type="text" id="chat-input" placeholder="Type a message...">
-                <button id="chat-send">Send</button>
+                <div class="input-wrapper">
+                    <input type="text" id="chat-input" placeholder="Ask NexTrack AI...">
+                    <button id="chat-send"><i data-lucide="send"></i></button>
+                </div>
             </div>
         </div>
     </div>

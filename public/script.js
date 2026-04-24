@@ -84,14 +84,31 @@ document.addEventListener('DOMContentLoaded', () => {
         // Don't update if an overlay is active
         if (document.querySelector('.overlay-page.active')) return;
 
+        const step5 = document.getElementById('step5');
+        const step5Top = step5.offsetTop;
+
+        // If results are active, don't allow scrolling above Step 5
+        if (document.body.classList.contains('results-active')) {
+            if (window.scrollY < step5Top) {
+                window.scrollTo(0, step5Top);
+            }
+        }
+
         const scrollTop = window.scrollY;
         const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
         const scrollFraction = Math.max(0, Math.min(1, scrollTop / scrollHeight));
 
         targetFrameIndex = scrollFraction * (frameCount - 1);
 
-        // Toggle landed state
-        document.body.classList.toggle('landed', scrollFraction > 0.78);
+        // Force 'landed' state and final frame if results are active
+        if (document.body.classList.contains('results-active')) {
+            document.body.classList.add('landed');
+            // Ensure we stay at or near the final frame for the animation
+            targetFrameIndex = Math.max(targetFrameIndex, (frameCount - 1) * 0.85);
+        } else {
+            // Normal scrollytelling behavior
+            document.body.classList.toggle('landed', scrollFraction > 0.78);
+        }
 
         // Step activation and parallax
         steps.forEach((step) => {
@@ -145,7 +162,10 @@ document.addEventListener('DOMContentLoaded', () => {
         trackBtn.innerText = "Tracking...";
         trackBtn.disabled = true;
         errorMsg.classList.add('hidden');
-        resultsContainer.classList.add('hidden');
+        
+        // Don't hide resultsContainer here if you want to keep showing old results while loading new ones,
+        // or hide it if you want a clean state.
+        resultsContainer.classList.remove('active'); 
 
         try {
             const response = await fetch(`/api/track/${id}`);
@@ -185,10 +205,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 resHistory.appendChild(li);
             });
 
-            // Show results in isolated view
-            document.body.classList.add('results-view');
-            document.body.classList.remove('no-scroll');
-            window.scrollTo(0, 0); // Scroll to top of results
+            // Show results inline
+            resultsContainer.classList.add('active');
+            resultsContainer.classList.remove('hidden');
+            document.body.classList.add('results-active'); // Lock scroll up
+            
+            // Smooth scroll to results
+            setTimeout(() => {
+                resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
 
         } catch (err) {
             errorMsg.innerText = err.message;
@@ -199,17 +224,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Clear Tracking Logic ---
+    const clearBtn = document.getElementById('clear-btn');
+    
+    // Initial state check
+    if (trackInput.value.trim().length === 0) {
+        clearBtn.classList.add('hidden');
+        trackInput.classList.remove('has-content');
+    }
+
+    // Show/Hide clear button and adjust padding based on input
+    trackInput.addEventListener('input', () => {
+        if (trackInput.value.trim().length > 0) {
+            clearBtn.classList.remove('hidden');
+            trackInput.classList.add('has-content');
+        } else {
+            clearBtn.classList.add('hidden');
+            trackInput.classList.remove('has-content');
+        }
+    });
+
+    clearBtn.addEventListener('click', () => {
+        // Clear input and state
+        trackInput.value = '';
+        clearBtn.classList.add('hidden');
+        trackInput.classList.remove('has-content');
+        errorMsg.classList.add('hidden');
+        
+        // Hide results
+        resultsContainer.classList.remove('active');
+        document.body.classList.remove('results-active');
+        
+        // Smoothly scroll back to Step 5
+        const step5 = document.getElementById('step5');
+        step5.scrollIntoView({ behavior: 'smooth' });
+    });
+
     // --- Logo Navigation Logic ---
     const logoBtn = document.getElementById('logo-btn');
     logoBtn.addEventListener('click', () => {
-        // If in results view, go back to Step 5
-        if (document.body.classList.contains('results-view')) {
-            document.body.classList.remove('results-view');
-            const step5 = document.getElementById('step5');
-            step5.scrollIntoView({ behavior: 'smooth' });
+        // If results are open, reset everything and go to Step 1
+        if (document.body.classList.contains('results-active')) {
+            document.body.classList.remove('results-active');
+            resultsContainer.classList.remove('active');
+            resultsContainer.classList.add('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
-
+        
         // If in Step 5 (landed), go to Step 1
         if (document.body.classList.contains('landed')) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -242,10 +304,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const addMessage = (message, sender) => {
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('message', sender);
+        
         let formattedMsg = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        msgDiv.innerHTML = formattedMsg;
+        
+        // Add icons for a more premium feel
+        const iconName = sender === 'bot' ? 'bot' : 'user';
+        msgDiv.innerHTML = `
+            <div class="message-icon"><i data-lucide="${iconName}"></i></div>
+            <div class="message-text">${formattedMsg}</div>
+        `;
+        
         chatBody.appendChild(msgDiv);
         chatBody.scrollTop = chatBody.scrollHeight;
+        
+        // Re-initialize Lucide for the new icon
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
     };
 
     const handleSendMessage = async () => {
