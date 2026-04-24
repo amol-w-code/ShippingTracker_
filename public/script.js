@@ -1,4 +1,113 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Scrollytelling Logic ---
+    const canvas = document.getElementById('scrolly-canvas');
+    const context = canvas.getContext('2d');
+    const scrollySection = document.getElementById('scrollytelling');
+    const steps = document.querySelectorAll('.step');
+
+    const frameCount = 134;
+    const currentFrame = index => (
+        `frames/ezgif-frame-${index.toString().padStart(3, '0')}.jpg`
+    );
+
+    const images = [];
+    let imagesLoaded = 0;
+
+    // Preload images
+    for (let i = 1; i <= frameCount; i++) {
+        const img = new Image();
+        img.src = currentFrame(i);
+        img.onload = () => {
+            imagesLoaded++;
+            if (imagesLoaded === 1) {
+                // Draw first frame immediately
+                renderFrame(0);
+                canvas.classList.add('loaded');
+            }
+        };
+        images.push(img);
+    }
+
+    let targetFrameIndex = 0;
+    let currentFrameIndex = 0;
+
+    function renderFrame(index) {
+        const roundedIndex = Math.round(index);
+        if (images[roundedIndex]) {
+            const img = images[roundedIndex];
+            const canvasRatio = canvas.width / canvas.height;
+            const imgRatio = img.width / img.height;
+
+            let drawWidth, drawHeight, offsetX, offsetY;
+
+            if (canvasRatio > imgRatio) {
+                drawWidth = canvas.width;
+                drawHeight = canvas.width / imgRatio;
+                offsetX = 0;
+                offsetY = (canvas.height - drawHeight) / 2;
+            } else {
+                drawWidth = canvas.height * imgRatio;
+                drawHeight = canvas.height;
+                offsetX = (canvas.width - drawWidth) / 2;
+                offsetY = 0;
+            }
+
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
+        }
+    }
+
+    function updateCanvasSize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        renderFrame(currentFrameIndex);
+    }
+
+    window.addEventListener('resize', updateCanvasSize);
+    updateCanvasSize();
+
+    // Smooth animation loop
+    function animate() {
+        // Lerp factor (0.1 for slow/smooth, 1.0 for instant)
+        const lerpFactor = 0.1;
+        currentFrameIndex += (targetFrameIndex - currentFrameIndex) * lerpFactor;
+
+        renderFrame(currentFrameIndex);
+        requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+
+    // Scroll listener for target frame index
+    window.addEventListener('scroll', () => {
+        const scrollTop = window.scrollY;
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollFraction = Math.max(0, Math.min(1, scrollTop / scrollHeight));
+
+        targetFrameIndex = scrollFraction * (frameCount - 1);
+
+        // Toggle landed state for Step 5 layout transformation
+        // Step 5 is the 5th section out of 5, so around 80%+ scroll
+        document.body.classList.toggle('landed', scrollFraction > 0.78);
+
+        // Step activation and parallax
+        steps.forEach((step) => {
+            const rect = step.getBoundingClientRect();
+            const glassCard = step.querySelector('.glass-card');
+
+            if (rect.top < window.innerHeight * 0.7 && rect.bottom > window.innerHeight * 0.3) {
+                step.classList.add('active');
+
+                if (glassCard) {
+                    const relativePos = (rect.top + rect.height / 2) / window.innerHeight;
+                    const moveY = (relativePos - 0.5) * 60;
+                    glassCard.style.transform = `translateY(${moveY}px) rotate(${(relativePos - 0.5) * 10}deg)`;
+                }
+            } else {
+                step.classList.remove('active');
+            }
+        });
+    });
+
     // --- Tracking Logic ---
     const trackForm = document.getElementById('tracking-form');
     const trackInput = document.getElementById('tracking-input');
@@ -33,11 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const response = await fetch(`/api/track/${id}`);
-            
+
             // Check if response is JSON
             const contentType = response.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {
-                throw new Error("Unable to connect to the tracking server. Are you sure you are running 'node server.js' and viewing this at http://localhost:3000?");
+                throw new Error("Unable to connect to the tracking server. Make sure you have run 'python app.py' and are viewing this at http://localhost:3000");
             }
 
             const data = await response.json();
@@ -48,12 +157,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Populate dashboard
             currentTrackingId = id;
-            
+
             resStatus.innerText = data.Status;
-            
+
             // Adjust color based on status
-            if(data.Status === 'Delayed') resStatus.style.color = '#ef4444';
-            else if(data.Status === 'Out for Delivery') resStatus.style.color = '#10B981';
+            if (data.Status === 'Delayed') resStatus.style.color = '#ef4444';
+            else if (data.Status === 'Out for Delivery') resStatus.style.color = '#10B981';
             else resStatus.style.color = '#60A5FA';
 
             resOrigin.innerText = data.Origin;
@@ -62,9 +171,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Fuzzy Prediction Data
             resEta.innerText = data.prediction.etaFormatted;
             resFuzzyStatus.innerText = data.prediction.fuzzyStatus;
-            
+
             // Highlight negative delays
-            if(data.prediction.fuzzyStatus.includes('Delay')) {
+            if (data.prediction.fuzzyStatus.includes('Delay')) {
                 resFuzzyStatus.style.color = '#ef4444';
             } else {
                 resFuzzyStatus.style.color = '#10B981';
@@ -91,6 +200,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Show results
             resultsContainer.classList.remove('hidden');
 
+            // Smooth scroll to results
+            setTimeout(() => {
+                resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+
         } catch (err) {
             errorMsg.innerText = err.message;
             errorMsg.classList.remove('hidden');
@@ -110,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chatToggle.addEventListener('click', () => {
         chatWindow.classList.toggle('hidden');
-        if(!chatWindow.classList.contains('hidden')) {
+        if (!chatWindow.classList.contains('hidden')) {
             chatInput.focus();
         }
     });
@@ -122,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addMessage = (message, sender) => {
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('message', sender);
-        
+
         // Parse simple markdown-like bold text **text** to HTML
         let formattedMsg = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
         msgDiv.innerHTML = formattedMsg;
@@ -133,7 +247,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const handleSendMessage = async () => {
         const message = chatInput.value.trim();
-        if(!message) return;
+        if (!message) return;
 
         // User message
         addMessage(message, 'user');
@@ -149,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     trackingId: currentTrackingId // Send current context context
                 })
             });
-            
+
             // Check if response is JSON
             const contentType = response.headers.get("content-type");
             if (!contentType || !contentType.includes("application/json")) {
@@ -157,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const data = await response.json();
-            
+
             // Bot response
             addMessage(data.reply, 'bot');
         } catch (err) {

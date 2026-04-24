@@ -1,40 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NexTrack | AI Delivery Tracking</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body>
 
-    <!-- Main Navigation -->
-    <nav class="navbar">
-        <div class="logo">NexTrack <span>AI</span></div>
-        <div class="nav-links">
-            <a href="index.html">Home</a>
-            <a href="services.html">Services</a>
-            <a href="contact.html">Contact</a>
-        </div>
+    <!-- Floating Side Menu (Hidden by default) -->
+    <nav class="side-menu" id="side-menu">
+        <div class="menu-item logo-item">NexTrack <span>AI</span></div>
+        <a href="#services" class="menu-item">Services</a>
+        <a href="#about" class="menu-item">About</a>
+        <a href="#contact" class="menu-item">Contact</a>
     </nav>
 
-    <!-- Hero / Search Section -->
-    <header class="hero">
-        <div class="hero-content">
-            <h1>Intelligent Shipping Tracking</h1>
-            <p>Powered by Fuzzy Logic to give you the most accurate real-time ETA under any conditions.</p>
-            <form id="tracking-form" class="search-box">
-                <input type="text" id="tracking-input" placeholder="Enter Tracking ID (e.g. SHP12345)" required>
-                <button type="submit" id="track-btn">Track Package</button>
-            </form>
-            <div id="error-message" class="error-msg hidden"></div>
+    <!-- Background Animation Canvas -->
+    <div class="canvas-container">
+        <canvas id="scrolly-canvas"></canvas>
+    </div>
+
+    <!-- Scrollytelling Section -->
+    <section id="scrollytelling">
+
+        <div class="scroll-content">
+            <div class="step" id="step1">
+                <div class="glass-card">
+                    <h1>NexTrack Logistics</h1>
+                    <p>The future of global shipping, powered by intelligent AI and real-time data.</p>
+                    <div class="scroll-indicator">
+                        <span>Scroll to explore</span>
+                        <div class="mouse"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="step" id="step2">
+                <div class="glass-card">
+                    <h2>Instant Scanning</h2>
+                    <p>Advanced optical sensors capture every dimension and detail in milliseconds.</p>
+                </div>
+            </div>
+            <div class="step" id="step3">
+                <div class="glass-card">
+                    <h2>AI-Powered Sorting</h2>
+                    <p>Proprietary fuzzy logic algorithms determine the optimal route based on live weather and traffic.
+                    </p>
+                </div>
+            </div>
+            <div class="step" id="step4">
+                <div class="glass-card">
+                    <h2>Global Dispatch</h2>
+                    <p>A seamless journey across borders, tracked every second of the way.</p>
+                </div>
+            </div>
+            <div class="step" id="step5">
+                <div class="glass-card">
+                    <h2>Ready to Track?</h2>
+                    <p>Enter your Tracking ID below to see our AI in action.</p>
+                    <form id="tracking-form" class="search-box">
+                        <input type="text" id="tracking-input" placeholder="Enter Tracking ID (e.g. SHP12345)" required>
+                        <button type="submit" id="track-btn">Track Package</button>
+                    </form>
+                    <div id="error-message" class="error-msg hidden"></div>
+                </div>
+            </div>
         </div>
-    </header>
+    </section>
+
 
     <!-- Tracking Results Section (Hidden by default) -->
     <section id="tracking-results" class="results-container hidden">
-        
+
         <div class="card result-header">
             <h2>Status: <span id="res-status" class="status-badge">In Transit</span></h2>
             <div class="route-info">
@@ -84,14 +124,15 @@
 
     <!-- Floating Chatbot Widget -->
     <div id="chatbot-widget" class="chatbot-container">
-        <button id="chatbot-toggle" class="chat-btn">💬 Chat Support</button>
+        <button id="chatbot-toggle" class="chat-btn">🤖</button>
         <div id="chat-window" class="chat-window hidden">
             <div class="chat-header">
-                <h4>NexTrack Assistant</h4>
+                <h4>NexTrack Bot</h4>
                 <button id="chat-close" class="close-btn">&times;</button>
             </div>
             <div id="chat-body" class="chat-body">
-                <div class="message bot">Hello! Enter your Tracking ID to get started, then ask me anything about your package.</div>
+                <div class="message bot">Hello! Enter your Tracking ID to get started, then ask me anything about your
+                    package.</div>
             </div>
             <div class="chat-footer">
                 <input type="text" id="chat-input" placeholder="Type a message...">
@@ -102,4 +143,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>
