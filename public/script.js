@@ -139,6 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorMsg = document.getElementById('error-message');
     const resultsContainer = document.getElementById('tracking-results');
 
+    // Force clear input on refresh/load
+    trackInput.value = '';
+
     // Result Nodes
     const resStatus = document.getElementById('res-status');
     const resOrigin = document.getElementById('res-origin');
@@ -154,6 +157,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // Global state
     let currentTrackingId = null;
 
+    // --- Toast Notification ---
+    const toastContainer = document.getElementById('toast-container');
+    const showToast = (message) => {
+        const toast = document.createElement('div');
+        toast.className = 'toast';
+        toast.innerHTML = `<i data-lucide="alert-circle"></i> <span>${message}</span>`;
+        toastContainer.appendChild(toast);
+        
+        if (window.lucide) window.lucide.createIcons();
+
+        setTimeout(() => {
+            toast.classList.add('removing');
+            setTimeout(() => toast.remove(), 500);
+        }, 3000);
+    };
+
     trackForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const id = trackInput.value.trim();
@@ -161,21 +180,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         trackBtn.innerText = "Tracking...";
         trackBtn.disabled = true;
-        errorMsg.classList.add('hidden');
         
-        // Don't hide resultsContainer here if you want to keep showing old results while loading new ones,
-        // or hide it if you want a clean state.
-        resultsContainer.classList.remove('active'); 
-
         try {
             const response = await fetch(`/api/track/${id}`);
-
-            // Check if response is JSON
-            const contentType = response.headers.get("content-type");
-            if (!contentType || !contentType.includes("application/json")) {
-                throw new Error("Unable to connect to the tracking server. Make sure you have run 'python app.py' and are viewing this at http://localhost:3000");
-            }
-
             const data = await response.json();
 
             if (!response.ok) {
@@ -194,16 +201,16 @@ document.addEventListener('DOMContentLoaded', () => {
             resTraffic.innerText = data.TrafficCongestion;
             resDistance.innerText = `${data.DistanceRemaining} km`;
 
-            resHistory.innerHTML = '';
-            data.HistoryEvents.forEach(evt => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                    <p class="time">${evt.timestamp}</p>
-                    <p class="event">${evt.event}</p>
-                    <p class="loc">${evt.location}</p>
-                `;
-                resHistory.appendChild(li);
-            });
+            resHistory.innerHTML = data.HistoryEvents.map(evt => `
+                <li>
+                    <div class="time">${evt.timestamp}</div>
+                    <div class="event">${evt.event}</div>
+                    <div class="loc">${evt.location}</div>
+                </li>
+            `).join('');
+
+            // Reset Lucide icons in the new elements
+            if (window.lucide) window.lucide.createIcons();
 
             // Show results inline
             resultsContainer.classList.add('active');
@@ -216,8 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }, 100);
 
         } catch (err) {
-            errorMsg.innerText = err.message;
-            errorMsg.classList.remove('hidden');
+            showToast(err.message);
         } finally {
             trackBtn.innerText = "Track Package";
             trackBtn.disabled = false;
@@ -245,19 +251,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     clearBtn.addEventListener('click', () => {
-        // Clear input and state
+        // Just clear the input and UI state, don't move or hide results
         trackInput.value = '';
         clearBtn.classList.add('hidden');
         trackInput.classList.remove('has-content');
         errorMsg.classList.add('hidden');
-        
-        // Hide results
-        resultsContainer.classList.remove('active');
-        document.body.classList.remove('results-active');
-        
-        // Smoothly scroll back to Step 5
-        const step5 = document.getElementById('step5');
-        step5.scrollIntoView({ behavior: 'smooth' });
+        trackInput.focus();
     });
 
     // --- Logo Navigation Logic ---
