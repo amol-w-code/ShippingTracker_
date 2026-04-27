@@ -73,7 +73,16 @@ document.addEventListener('DOMContentLoaded', () => {
     function animate() {
         // Lerp factor (0.1 for slow/smooth, 1.0 for instant)
         const lerpFactor = 0.1;
-        currentFrameIndex += (targetFrameIndex - currentFrameIndex) * lerpFactor;
+
+        if (document.body.classList.contains('results-active')) {
+            // Continuously loop the flying plane frames
+            currentFrameIndex += 0.4; // Animation speed
+            if (currentFrameIndex >= frameCount) {
+                currentFrameIndex = 116; // Loop back to the start of the flying sequence
+            }
+        } else {
+            currentFrameIndex += (targetFrameIndex - currentFrameIndex) * lerpFactor;
+        }
 
         renderFrame(currentFrameIndex);
         requestAnimationFrame(animate);
