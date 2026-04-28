@@ -117,7 +117,7 @@ def chat():
         "status": ["where is my package", "location", "status", "where is it", "track my shipment", "where is my order"],
         "eta": ["delay", "eta", "when will it arrive", "time", "how long", "delivery date", "how fast can i get it", "how fast"],
         "conditions": ["weather", "traffic", "why is it delayed", "road conditions", "route"],
-        "dataset": ["average", "statistics", "dataset", "data", "affect", "history", "records"]
+        "dataset": ["average", "statistics", "dataset", "data", "affect", "history", "records", "show me all the dataset", "show all the dataset"]
     }
     
     corpus = []
@@ -175,7 +175,14 @@ def chat():
             reply = "I need a tracking ID to check the route conditions."
     elif matched_intent == "dataset":
         if ml_dataset is not None:
-            if 'rain' in message:
+            if 'show' in message and 'all' in message:
+                sample_df = ml_dataset.head(50)
+                # Apply inline styling to the pandas generated HTML table so it fits perfectly in the chatbot window
+                table_html = sample_df.to_html(classes="dataset-table", index=False, border=0)
+                # Wrap it in a scrollable div
+                wrapped_table = f"<div style='max-height: 400px; max-width: 100%; overflow: auto; border: 2px solid #000; border-radius: 10px; padding: 5px; margin-top: 10px; background: white;'>{table_html}</div>"
+                reply = f"Because the full dataset contains over {len(ml_dataset):,} records, here are the first 50 rows for you to explore:<br>{wrapped_table}"
+            elif 'rain' in message:
                 avg = ml_dataset[ml_dataset['WeatherCondition'] == 'Rain']['Time_Taken_Hours'].mean()
                 reply = f"According to my training data, the average delivery time during Rain is **{avg:.1f} hours**."
             elif 'storm' in message:
@@ -185,7 +192,7 @@ def chat():
                 avg = ml_dataset[ml_dataset['TrafficCongestion'] == 'Jam']['Time_Taken_Hours'].mean()
                 reply = f"In heavy traffic (Jam), the average delivery time in my dataset is **{avg:.1f} hours**."
             else:
-                reply = f"My neural network is trained on **{len(ml_dataset):,}** records from the Amazon Delivery dataset! Ask me how rain or storms affect delivery times."
+                reply = f"My neural network is trained on **{len(ml_dataset):,}** records from the Amazon Delivery dataset! Ask me to 'show all the dataset' or how rain/storms affect delivery times."
         else:
             reply = "My training dataset is currently offline, so I can't compute statistics right now."
     else:
