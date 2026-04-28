@@ -1022,3 +1022,37 @@ body.landed #step5 p {
     z-index: 9999 !important;
     position: fixed !important;
 }
+
+/* DATASET TABLE STYLING */
+.dataset-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+    color: #000;
+    text-align: left;
+    margin: 0;
+}
+
+.dataset-table thead th {
+    background: var(--primary);
+    color: #fff;
+    padding: 10px;
+    border: 2px solid #000;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.dataset-table tbody td {
+    padding: 8px 10px;
+    border: 2px solid #000;
+    background: #fff;
+}
+
+.dataset-table tbody tr:nth-child(even) td {
+    background: #f4f4f4;
+}
+
+.dataset-table tbody tr:hover td {
+    background: #ffe4e1;
+}
