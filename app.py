@@ -5,6 +5,8 @@ import time
 import pandas as pd
 from fuzzy_logic import calculate_fuzzy_eta
 import ml_model
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 app = Flask(__name__, static_folder='public')
 
@@ -24,6 +26,35 @@ try:
 except Exception as e:
     print(f"Error loading datasets: {e}")
     shipments_data = {}
+
+print("Initializing AI NLP Engine...")
+# Initialize NLP Intent processing once
+intents = {
+    "greeting": ["hello", "hi", "hey there", "good morning", "howdy"],
+    "status": ["where is my package", "location", "status", "where is it", "track my shipment", "where is my order"],
+    "eta": ["delay", "eta", "when will it arrive", "time", "how long", "delivery date", "how fast can i get it", "how fast"],
+    "conditions": ["weather", "traffic", "why is it delayed", "road conditions", "route"],
+    "dataset": ["average", "statistics", "dataset", "data", "affect", "history", "records", "show me all the dataset", "show all the dataset"]
+}
+
+corpus = []
+intent_labels = []
+for intent, phrases in intents.items():
+    for phrase in phrases:
+        corpus.append(phrase)
+        intent_labels.append(intent)
+        
+vectorizer = TfidfVectorizer()
+X_intents = vectorizer.fit_transform(corpus)
+print("AI Engine Ready.")
+
+# Pre-load ML model
+print("Loading Machine Learning Model...")
+try:
+    ml_model.load_model()
+    print("ML Model Loaded.")
+except Exception as e:
+    print(f"ML Model not loaded (will need training): {e}")
 
 # --- STATIC FILES ---
 @app.route('/')
@@ -58,7 +89,9 @@ def track_package(id):
         )
     
     response_data = shipment.copy()
+    # Normalize status field for frontend
     response_data['prediction'] = prediction
+    response_data['prediction']['displayStatus'] = prediction.get('mlStatus') or prediction.get('fuzzyStatus')
     return jsonify(response_data)
 
 # --- ML TRAINING API ---
@@ -109,29 +142,8 @@ def chat():
             )
 
     # Advanced NLP Intent Processing using TF-IDF
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.metrics.pairwise import cosine_similarity
-    
-    intents = {
-        "greeting": ["hello", "hi", "hey there", "good morning", "howdy"],
-        "status": ["where is my package", "location", "status", "where is it", "track my shipment", "where is my order"],
-        "eta": ["delay", "eta", "when will it arrive", "time", "how long", "delivery date", "how fast can i get it", "how fast"],
-        "conditions": ["weather", "traffic", "why is it delayed", "road conditions", "route"],
-        "dataset": ["average", "statistics", "dataset", "data", "affect", "history", "records", "show me all the dataset", "show all the dataset"]
-    }
-    
-    corpus = []
-    intent_labels = []
-    for intent, phrases in intents.items():
-        for phrase in phrases:
-            corpus.append(phrase)
-            intent_labels.append(intent)
-            
-    vectorizer = TfidfVectorizer()
-    X = vectorizer.fit_transform(corpus)
-    
     user_vec = vectorizer.transform([message])
-    similarities = cosine_similarity(user_vec, X)
+    similarities = cosine_similarity(user_vec, X_intents)
     
     best_match_idx = similarities.argmax()
     best_score = similarities[0, best_match_idx]

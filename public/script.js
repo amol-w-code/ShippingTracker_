@@ -73,42 +73,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Smooth animation loop
     function animate() {
-        // Animation speed
-        const speed = 0.6; // A bit faster for a single cinematic flight
-
-        if (currentFrameIndex < frameCount - 1) {
-            currentFrameIndex += speed;
-            
-            // Check if animation just finished
-            if (currentFrameIndex >= frameCount - 1) {
+        if (isTakingOff) {
+            // Cinematic takeoff: Automatic fast playback
+            const speed = 0.8;
+            if (currentFrameIndex < frameCount - 1) {
+                currentFrameIndex += speed;
+            } else {
                 currentFrameIndex = frameCount - 1;
+                isTakingOff = false;
+                document.body.classList.add('results-active');
+                document.body.classList.add('landed');
                 
-                // If this was a new tracking request, trigger the UI updates
-                if (isTakingOff) {
-                    isTakingOff = false;
-                    document.body.classList.add('results-active');
-                    
-                    // Fade in results and scroll to them
-                    const resultsContainer = document.getElementById('tracking-results');
-                    resultsContainer.classList.add('active');
-                    resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    
-                    // Auto-open chatbot with custom greeting after plane lands
-                    const chatWindow = document.getElementById('chat-window');
-                    const chatBody = document.getElementById('chat-body');
-                    chatWindow.classList.remove('hidden');
-                    
-                    const initialMsg = chatBody.querySelector('.message');
-                    if (initialMsg && initialMsg.innerText.includes("Hello! I'm your NexTrack")) {
-                        initialMsg.remove();
-                    }
-                    
-                    
-                    if (window.addBotMessage) {
-                        window.addBotMessage(`🛬 Your package **${currentTrackingId}** has landed on your screen! I'm your AI tracking assistant. Ask me anything about the route!`);
-                    }
-                }
+                // Trigger UI updates
+                const resultsContainer = document.getElementById('tracking-results');
+                resultsContainer.classList.add('active');
+                resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
             }
+        } else if (!document.body.classList.contains('results-active')) {
+            // Normal Scrollytelling: Smoothly interpolate to target frame based on scroll
+            const scrollEasing = 0.1;
+            currentFrameIndex += (targetFrameIndex - currentFrameIndex) * scrollEasing;
         }
 
         renderFrame(currentFrameIndex);
@@ -131,16 +116,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const scrollTop = window.scrollY;
-        // Animation frame index is fully automatic, no scroll fraction calculation needed
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollFraction = scrollHeight > 0 ? Math.max(0, Math.min(1, scrollTop / scrollHeight)) : 0;
+
+        // Update target frame for scrollytelling
+        if (!isTakingOff && !document.body.classList.contains('results-active')) {
+            targetFrameIndex = scrollFraction * (frameCount - 1);
+        }
 
         // Force 'landed' state and final frame if results are active
         if (document.body.classList.contains('results-active')) {
             document.body.classList.add('landed');
         } else {
-            // Normal behavior
-            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-            const scrollFraction = Math.max(0, Math.min(1, scrollTop / scrollHeight));
-            document.body.classList.toggle('landed', scrollFraction > 0.78);
+            // Normal behavior: Landed state triggers the side menu
+            document.body.classList.toggle('landed', scrollFraction > 0.85);
         }
 
         // Step activation and parallax
@@ -153,8 +142,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (glassCard) {
                     const relativePos = (rect.top + rect.height/2) / window.innerHeight;
-                    const moveY = (relativePos - 0.5) * 60;
-                    glassCard.style.transform = `translateY(${moveY}px) rotate(${ (relativePos - 0.5) * 10 }deg)`;
+                    const moveY = (relativePos - 0.5) * 20;
+                    glassCard.style.transform = `translateY(${moveY}px) rotate(${ (relativePos - 0.5) * 4 }deg)`;
                 }
             } else {
                 step.classList.remove('active');
@@ -162,8 +151,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Scroll listener
-    window.addEventListener('scroll', updateScrollState);
+    // --- Cursor Hint Logic ---
+    const cursorHint = document.getElementById('cursor-hint');
+    let hasScrolled = false;
+
+    // Hide default cursor initially
+    document.body.style.cursor = 'none';
+
+    window.addEventListener('mousemove', (e) => {
+        if (!hasScrolled) {
+            cursorHint.style.left = e.clientX + 'px';
+            cursorHint.style.top = e.clientY + 'px';
+            cursorHint.classList.add('visible');
+        }
+    });
+
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 50) {
+            if (!hasScrolled) {
+                hasScrolled = true;
+                cursorHint.classList.remove('visible');
+                document.body.style.cursor = 'auto'; // Restore default cursor
+            }
+        } else {
+            hasScrolled = false;
+            document.body.style.cursor = 'none';
+        }
+        updateScrollState();
+    });
 
     // --- Tracking Logic ---
     const trackForm = document.getElementById('tracking-form');
@@ -228,32 +243,71 @@ document.addEventListener('DOMContentLoaded', () => {
             resOrigin.innerText = data.Origin;
             resDest.innerText = data.Destination;
             resEta.innerText = data.prediction.etaFormatted;
-            resFuzzyStatus.innerText = data.prediction.fuzzyStatus;
+            resFuzzyStatus.innerText = data.prediction.displayStatus;
             resLocation.innerText = data.CurrentLocation;
             resWeather.innerText = data.WeatherCondition;
             resTraffic.innerText = data.TrafficCongestion;
             resDistance.innerText = `${data.DistanceRemaining} km`;
 
-            resHistory.innerHTML = data.HistoryEvents.map(evt => `
+            // Build a complete journey timeline: Origin -> History -> Current -> Destination
+            const history = [...data.HistoryEvents]; 
+            const now = new Date();
+            
+            // Calculate Estimated Arrival Time
+            const etaHours = data.prediction.etaHours || 0;
+            const arrivalDate = new Date(now.getTime() + etaHours * 60 * 60 * 1000);
+            const arrivalStr = arrivalDate.toLocaleString('en-US', { 
+                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true 
+            });
+
+            const originTime = history.length > 0 ? history[0].timestamp : "Just now";
+            const currentTime = history.length > 0 ? history[history.length - 1].timestamp : "Just now";
+            
+            let timelineHtml = `
+                <li class="timeline-origin">
+                    <div class="time">${originTime}</div>
+                    <div class="event">Package Registered</div>
+                    <div class="loc">${data.Origin}</div>
+                </li>
+            `;
+            
+            timelineHtml += history.map(evt => `
                 <li>
                     <div class="time">${evt.timestamp}</div>
                     <div class="event">${evt.event}</div>
                     <div class="loc">${evt.location}</div>
                 </li>
             `).join('');
+            
+            timelineHtml += `
+                <li class="timeline-current">
+                    <div class="time">Arrived: ${currentTime}</div>
+                    <div class="event">Current Status: ${data.Status}</div>
+                    <div class="loc">${data.CurrentLocation}</div>
+                </li>
+            `;
+            
+            timelineHtml += `
+                <li class="timeline-estimated">
+                    <div class="time">${arrivalStr} (Estimated)</div>
+                    <div class="event">Expected Arrival</div>
+                    <div class="loc">${data.Destination}</div>
+                </li>
+            `;
+            
+            resHistory.innerHTML = timelineHtml;
 
             // Reset Lucide icons in the new elements
             if (window.lucide) window.lucide.createIcons();
 
-            // Cinematic Takeoff Animation & UI Enhancements
-            isTakingOff = true;
-            currentFrameIndex = 0; // Restart flight animation
-
-            // Show results container
-            resultsContainer.classList.remove('hidden');
+            // UI Enhancements
+            document.body.classList.add('results-active');
+            document.body.classList.add('landed');
             
-            // Note: The UI updates and Chatbot popup are now handled inside the animate() function
-            // when the plane finishes its flight.
+            // Show and scroll to results container
+            resultsContainer.classList.remove('hidden');
+            resultsContainer.classList.add('active');
+            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
         } catch (err) {
             showToast(err.message);
@@ -432,10 +486,5 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Auto-open chatbot with greeting on page load
-    setTimeout(() => {
-        if (chatWindow.classList.contains('hidden')) {
-            chatWindow.classList.remove('hidden');
-        }
-    }, 1500); // Wait 1.5 seconds after load
+    // Chatbot will only open on manual click or after a cinematic flight completion
 });

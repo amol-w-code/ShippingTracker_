@@ -58,14 +58,29 @@ def train_model(csv_path):
 
     return {"status": "success", "mae": float(mae), "message": "Scikit-Learn Model trained successfully"}
 
+# Global cache for the model and encoders
+_cached_model = None
+
+def load_model():
+    """
+    Loads the model and encoders from disk if they are not already cached.
+    """
+    global _cached_model
+    if _cached_model is None:
+        if not os.path.exists(MODEL_PATH):
+            raise FileNotFoundError("ML model is not trained yet. Please train the model first.")
+        _cached_model = joblib.load(MODEL_PATH)
+    return _cached_model
+
 def predict_eta(weather, traffic, distance):
     """
     Predicts the ETA in hours using the trained Scikit-Learn model.
     """
-    if not os.path.exists(MODEL_PATH):
+    try:
+        saved_data = load_model()
+    except FileNotFoundError:
         raise FileNotFoundError("ML model is not trained yet. Please train the model first.")
-
-    saved_data = joblib.load(MODEL_PATH)
+        
     model = saved_data["model"]
     encoders = saved_data["encoders"]
 
