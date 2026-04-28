@@ -8,6 +8,5 @@ pandas
 scikit-learn
 joblib
 matplotlib
-tensorflow
 kaggle
 gunicorn

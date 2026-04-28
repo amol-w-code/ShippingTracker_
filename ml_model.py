@@ -2,29 +2,18 @@ import pandas as pd
 import numpy as np
 import os
 import joblib
-
-try:
-    import tensorflow as tf
-    from tensorflow.keras.models import Sequential, load_model
-    from tensorflow.keras.layers import Dense, Dropout
-except ImportError:
-    tf = None
-
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_absolute_error
+from sklearn.ensemble import RandomForestRegressor
 
-MODEL_PATH = os.path.join(os.path.dirname(__file__), 'model.keras')
-ENCODERS_PATH = os.path.join(os.path.dirname(__file__), 'encoders.joblib')
+MODEL_PATH = os.path.join(os.path.dirname(__file__), 'model.joblib')
 
 def train_model(csv_path):
     """
-    Trains a Keras Neural Network on the provided CSV dataset.
+    Trains a Scikit-Learn Model on the provided CSV dataset.
     Expected columns: WeatherCondition, TrafficCongestion, DistanceRemaining, Time_Taken_Hours
     """
-    if tf is None:
-        raise ImportError("TensorFlow is not installed.")
-        
     if not os.path.exists(csv_path):
         raise FileNotFoundError(f"Dataset not found at {csv_path}")
 
@@ -56,41 +45,29 @@ def train_model(csv_path):
     # Train/Test Split
     X_train, X_test, y_train, y_test = train_test_split(X.values, y, test_size=0.2, random_state=42)
 
-    # Build Keras Model
-    model = Sequential([
-        Dense(64, activation='relu', input_shape=(X_train.shape[1],)),
-        Dropout(0.2),
-        Dense(32, activation='relu'),
-        Dense(16, activation='relu'),
-        Dense(1, activation='linear') # Output layer for regression
-    ])
-
-    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mae'])
-
-    # Train Model
-    history = model.fit(X_train, y_train, epochs=20, batch_size=32, validation_split=0.2, verbose=0)
+    # Build and Train Scikit-Learn Model
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
 
     # Evaluate
-    loss, mae = model.evaluate(X_test, y_test, verbose=0)
+    y_pred = model.predict(X_test)
+    mae = mean_absolute_error(y_test, y_pred)
 
-    # Save model and encoders
-    model.save(MODEL_PATH)
-    joblib.dump(encoders, ENCODERS_PATH)
+    # Save model and encoders together
+    joblib.dump({"model": model, "encoders": encoders}, MODEL_PATH)
 
-    return {"status": "success", "mae": float(mae), "message": "Keras Model trained successfully"}
+    return {"status": "success", "mae": float(mae), "message": "Scikit-Learn Model trained successfully"}
 
 def predict_eta(weather, traffic, distance):
     """
-    Predicts the ETA in hours using the trained Keras model.
+    Predicts the ETA in hours using the trained Scikit-Learn model.
     """
-    if tf is None:
-        raise ImportError("TensorFlow is not installed.")
-        
-    if not os.path.exists(MODEL_PATH) or not os.path.exists(ENCODERS_PATH):
-        raise FileNotFoundError("Keras ML model is not trained yet. Please train the model first.")
+    if not os.path.exists(MODEL_PATH):
+        raise FileNotFoundError("ML model is not trained yet. Please train the model first.")
 
-    model = load_model(MODEL_PATH)
-    encoders = joblib.load(ENCODERS_PATH)
+    saved_data = joblib.load(MODEL_PATH)
+    model = saved_data["model"]
+    encoders = saved_data["encoders"]
 
     # Preprocess input
     X_input = []
@@ -101,7 +78,11 @@ def predict_eta(weather, traffic, distance):
     for col, val in [('WeatherCondition', weather), ('TrafficCongestion', traffic)]:
         le = encoders[col]
         try:
-            encoded_val = le.transform([val])[0]
+            # Handle unseen labels gracefully
+            if val in le.classes_:
+                encoded_val = le.transform([val])[0]
+            else:
+                encoded_val = 0
         except ValueError:
             encoded_val = 0
         X_input.append(encoded_val)
@@ -114,7 +95,7 @@ def predict_eta(weather, traffic, distance):
     X_input_arr = np.array([X_input])
 
     # Predict
-    eta_hours = model.predict(X_input_arr, verbose=0)[0][0]
+    eta_hours = model.predict(X_input_arr)[0]
     
     # Formatting time
     days = int(eta_hours // 24)
