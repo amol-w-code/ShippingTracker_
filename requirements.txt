@@ -4,3 +4,9 @@ scipy==1.17.1
 scikit-fuzzy==0.4.2
 packaging==26.1
 networkx==3.6.1
+pandas
+scikit-learn
+joblib
+matplotlib
+tensorflow
+kaggle
