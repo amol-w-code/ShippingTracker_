@@ -69,19 +69,46 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', updateCanvasSize);
     updateCanvasSize();
 
+    let isTakingOff = false;
+
     // Smooth animation loop
     function animate() {
-        // Lerp factor (0.1 for slow/smooth, 1.0 for instant)
-        const lerpFactor = 0.1;
+        // Animation speed
+        const speed = 0.6; // A bit faster for a single cinematic flight
 
-        if (document.body.classList.contains('results-active')) {
-            // Continuously loop the flying plane frames
-            currentFrameIndex += 0.4; // Animation speed
-            if (currentFrameIndex >= frameCount) {
-                currentFrameIndex = 116; // Loop back to the start of the flying sequence
+        if (currentFrameIndex < frameCount - 1) {
+            currentFrameIndex += speed;
+            
+            // Check if animation just finished
+            if (currentFrameIndex >= frameCount - 1) {
+                currentFrameIndex = frameCount - 1;
+                
+                // If this was a new tracking request, trigger the UI updates
+                if (isTakingOff) {
+                    isTakingOff = false;
+                    document.body.classList.add('results-active');
+                    
+                    // Fade in results and scroll to them
+                    const resultsContainer = document.getElementById('tracking-results');
+                    resultsContainer.classList.add('active');
+                    resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // Auto-open chatbot with custom greeting after plane lands
+                    const chatWindow = document.getElementById('chat-window');
+                    const chatBody = document.getElementById('chat-body');
+                    chatWindow.classList.remove('hidden');
+                    
+                    const initialMsg = chatBody.querySelector('.message');
+                    if (initialMsg && initialMsg.innerText.includes("Hello! I'm your NexTrack")) {
+                        initialMsg.remove();
+                    }
+                    
+                    
+                    if (window.addBotMessage) {
+                        window.addBotMessage(`🛬 Your package **${currentTrackingId}** has landed on your screen! I'm your AI tracking assistant. Ask me anything about the route!`);
+                    }
+                }
             }
-        } else {
-            currentFrameIndex += (targetFrameIndex - currentFrameIndex) * lerpFactor;
         }
 
         renderFrame(currentFrameIndex);
@@ -104,18 +131,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const scrollTop = window.scrollY;
-        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
-        const scrollFraction = Math.max(0, Math.min(1, scrollTop / scrollHeight));
-
-        targetFrameIndex = scrollFraction * (frameCount - 1);
+        // Animation frame index is fully automatic, no scroll fraction calculation needed
 
         // Force 'landed' state and final frame if results are active
         if (document.body.classList.contains('results-active')) {
             document.body.classList.add('landed');
-            // Ensure we stay at or near the final frame for the animation
-            targetFrameIndex = Math.max(targetFrameIndex, (frameCount - 1) * 0.85);
         } else {
-            // Normal scrollytelling behavior
+            // Normal behavior
+            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrollFraction = Math.max(0, Math.min(1, scrollTop / scrollHeight));
             document.body.classList.toggle('landed', scrollFraction > 0.78);
         }
 
@@ -221,15 +245,15 @@ document.addEventListener('DOMContentLoaded', () => {
             // Reset Lucide icons in the new elements
             if (window.lucide) window.lucide.createIcons();
 
-            // Show results inline
-            resultsContainer.classList.add('active');
+            // Cinematic Takeoff Animation & UI Enhancements
+            isTakingOff = true;
+            currentFrameIndex = 0; // Restart flight animation
+
+            // Show results container
             resultsContainer.classList.remove('hidden');
-            document.body.classList.add('results-active'); // Lock scroll up
             
-            // Smooth scroll to results
-            setTimeout(() => {
-                resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 100);
+            // Note: The UI updates and Chatbot popup are now handled inside the animate() function
+            // when the plane finishes its flight.
 
         } catch (err) {
             showToast(err.message);
@@ -307,13 +331,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chatClose.addEventListener('click', () => {
         chatWindow.classList.add('hidden');
+        chatWindow.classList.remove('fullscreen');
     });
 
     const addMessage = (message, sender) => {
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('message', sender);
         
-        let formattedMsg = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        let formattedMsg = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
         
         // Add icons for a more premium feel
         const iconName = sender === 'bot' ? 'bot' : 'user';
@@ -330,6 +355,9 @@ document.addEventListener('DOMContentLoaded', () => {
             window.lucide.createIcons();
         }
     };
+    
+    // Add global access to addMessage for the animation loop
+    window.addBotMessage = (msg) => addMessage(msg, 'bot');
 
     const handleSendMessage = async () => {
         const message = chatInput.value.trim();
@@ -349,6 +377,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 })
             });
             const data = await response.json();
+            
+            if (data.trackingId) {
+                currentTrackingId = data.trackingId;
+                chatWindow.classList.add('fullscreen');
+            }
+            
             addMessage(data.reply, 'bot');
         } catch (err) {
             addMessage("Sorry, I'm having trouble connecting to the server.", 'bot');
@@ -398,4 +432,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Auto-open chatbot with greeting on page load
+    setTimeout(() => {
+        if (chatWindow.classList.contains('hidden')) {
+            chatWindow.classList.remove('hidden');
+        }
+    }, 1500); // Wait 1.5 seconds after load
 });
