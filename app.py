@@ -11,7 +11,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__, static_folder='public')
-client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+api_key = os.environ.get("GROQ_API_KEY")
+client = Groq(api_key=api_key) if api_key else None
 
 # Load the historical dataset for chatbot statistics
 try:
@@ -166,6 +167,9 @@ def chat():
         "- If a user provides a tracking ID that isn't in context, acknowledge it and suggest they check the ID."
         "- Keep responses concise (max 3-4 sentences unless explaining statistics)."
     )
+
+    if not client:
+        return jsonify({"reply": "I'm sorry, my AI brain is currently disconnected. Please ensure the GROQ_API_KEY is set in the environment.", "fullscreen": True})
 
     try:
         completion = client.chat.completions.create(
