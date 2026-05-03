@@ -434,7 +434,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.trackingId) {
                 currentTrackingId = data.trackingId;
-                // Removed auto-fullscreen to keep UI consistent
+            }
+
+            if (data.fullscreen) {
+                chatWindow.classList.add('fullscreen');
             }
             
             addMessage(data.reply, 'bot');

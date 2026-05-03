@@ -102,9 +102,11 @@ def chat():
     shipment_context = None
     prediction_context = {}
     
-    # Check if message is a direct tracking ID
-    if message.upper() in shipments_data:
-        tracking_id = message.upper()
+    import re
+    # Check if message contains a tracking ID pattern (e.g. SHP12345)
+    potential_ids = re.findall(r'SHP\d+', message.upper())
+    if potential_ids:
+        tracking_id = potential_ids[0]
 
     if tracking_id and tracking_id in shipments_data:
         shipment_context = shipments_data[tracking_id]
@@ -128,7 +130,8 @@ def chat():
         wrapped_table = f"<div class='dataset-scroll-container' style='max-height: 400px; max-width: 100%; overflow: auto; border: 2px solid #000; border-radius: 10px; padding: 5px; margin-top: 10px; background: white;'>{table_html}</div>"
         return jsonify({
             "reply": f"Because the full dataset contains over {len(ml_dataset):,} records, here are the first 50 rows for you to explore:<br>{wrapped_table}",
-            "trackingId": tracking_id
+            "trackingId": tracking_id,
+            "fullscreen": True
         })
 
     # Prepare statistics context
@@ -179,7 +182,7 @@ def chat():
         print(f"Groq API Error: {e}")
         reply = "I'm having trouble processing your request right now. Please try again in a moment."
 
-    return jsonify({"reply": reply, "trackingId": tracking_id})
+    return jsonify({"reply": reply, "trackingId": tracking_id, "fullscreen": True})
 
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 3000))
