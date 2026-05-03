@@ -38,7 +38,10 @@ We don't rely on a single algorithm for ETAs. Instead, we use a hybrid approach:
 
 #### **Layer 2: Fuzzy Logic (The Heuristic Fallback)**
 *   **How it works**: Using `scikit-fuzzy`, we created a linguistic inference system. Instead of hard numbers, it thinks like a human: *"If the weather is 'Stormy' AND traffic is 'High', then the delay is 'Severe'."*
-*   **Use Case**: This acts as a robust fallback. If the ML model encounters a scenario it hasn't seen before, the Fuzzy Logic engine provides a reasoned, logical prediction based on expert rules.
+*   **Use of Heuristics**: This layer uses **Heuristic Values**—pre-defined "rules of thumb" and expert knowledge—to handle edge cases.
+    *   **Linguistic Mapping**: We map fuzzy concepts like "Snow" (value: 8) or "Traffic Jam" (value: 10) into numeric crisp inputs using heuristic scales.
+    *   **Expert Rules**: We’ve implemented heuristic rules that allow the system to reason about the environment even when historical data is sparse.
+*   **Use Case**: This acts as a robust fallback. If the ML model encounters a scenario it hasn't seen before, the Fuzzy Logic engine provides a reasoned, logical prediction based on these heuristic rules.
 
 ### **The Database: Local & Scalable**
 *   **Active Shipments (JSON)**: We use a structured `shipments.json` file to store real-time package data. This allows for instant lookups and easy modification during the prototype phase.
