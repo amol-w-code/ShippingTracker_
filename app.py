@@ -5,10 +5,13 @@ import time
 import pandas as pd
 from fuzzy_logic import calculate_fuzzy_eta
 import ml_model
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from groq import Groq
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__, static_folder='public')
+client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 # Load the historical dataset for chatbot statistics
 try:
@@ -26,27 +29,6 @@ try:
 except Exception as e:
     print(f"Error loading datasets: {e}")
     shipments_data = {}
-
-print("Initializing AI NLP Engine...")
-# Initialize NLP Intent processing once
-intents = {
-    "greeting": ["hello", "hi", "hey there", "good morning", "howdy"],
-    "status": ["where is my package", "location", "status", "where is it", "track my shipment", "where is my order"],
-    "eta": ["delay", "eta", "when will it arrive", "time", "how long", "delivery date", "how fast can i get it", "how fast"],
-    "conditions": ["weather", "traffic", "why is it delayed", "road conditions", "route"],
-    "dataset": ["average", "statistics", "dataset", "data", "affect", "history", "records", "show me all the dataset", "show all the dataset"]
-}
-
-corpus = []
-intent_labels = []
-for intent, phrases in intents.items():
-    for phrase in phrases:
-        corpus.append(phrase)
-        intent_labels.append(intent)
-        
-vectorizer = TfidfVectorizer()
-X_intents = vectorizer.fit_transform(corpus)
-print("AI Engine Ready.")
 
 # Pre-load ML model
 print("Loading Machine Learning Model...")
@@ -113,18 +95,16 @@ def chat():
     if not data or 'message' not in data:
         return jsonify({"reply": "Please provide a valid message."}), 400
 
-    message = data['message'].lower()
+    message = data['message']
     tracking_id_raw = data.get('trackingId')
     tracking_id = tracking_id_raw.upper() if tracking_id_raw else ''
     
     shipment_context = None
-    prediction_context = None
+    prediction_context = {}
     
     # Check if message is a direct tracking ID
-    is_direct_tracking = False
     if message.upper() in shipments_data:
         tracking_id = message.upper()
-        is_direct_tracking = True
 
     if tracking_id and tracking_id in shipments_data:
         shipment_context = shipments_data[tracking_id]
@@ -141,76 +121,64 @@ def chat():
                 shipment_context['TrafficCongestion']
             )
 
-    # Advanced NLP Intent Processing using TF-IDF
-    user_vec = vectorizer.transform([message])
-    similarities = cosine_similarity(user_vec, X_intents)
-    
-    best_match_idx = similarities.argmax()
-    best_score = similarities[0, best_match_idx]
-    
-    matched_intent = intent_labels[best_match_idx] if best_score > 0.3 else "unknown"
-    
-    if is_direct_tracking:
-        matched_intent = "status"
+    # Special case for showing the full dataset (returns HTML table)
+    if ml_dataset is not None and 'show' in message.lower() and 'all' in message.lower() and 'dataset' in message.lower():
+        sample_df = ml_dataset.head(50)
+        table_html = sample_df.to_html(classes="dataset-table", index=False, border=0)
+        wrapped_table = f"<div class='dataset-scroll-container' style='max-height: 400px; max-width: 100%; overflow: auto; border: 2px solid #000; border-radius: 10px; padding: 5px; margin-top: 10px; background: white;'>{table_html}</div>"
+        return jsonify({
+            "reply": f"Because the full dataset contains over {len(ml_dataset):,} records, here are the first 50 rows for you to explore:<br>{wrapped_table}",
+            "trackingId": tracking_id
+        })
 
-    if matched_intent == "greeting":
-        reply = "Hello! I am the Smart Tracking Assistant. Please provide your Tracking ID, or if you're already tracking a package, ask me about its ETA or status."
-    elif matched_intent == "status":
-        if shipment_context:
-            status_text = prediction_context.get('mlStatus', prediction_context.get('fuzzyStatus', 'Unknown'))
-            customer_name = shipment_context.get("OrderedBy", "Confidential")
-            
-            table_html = (
-                f"<table style='width:100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; text-align: left;'>"
-                f"<tr style='border-bottom: 1px solid #ffffff33;'><td style='padding: 8px;'><strong>Ordered By</strong></td><td style='padding: 8px;'>{customer_name}</td></tr>"
-                f"<tr style='border-bottom: 1px solid #ffffff33;'><td style='padding: 8px;'><strong>Origin</strong></td><td style='padding: 8px;'>{shipment_context['Origin']}</td></tr>"
-                f"<tr style='border-bottom: 1px solid #ffffff33;'><td style='padding: 8px;'><strong>Destination</strong></td><td style='padding: 8px;'>{shipment_context['Destination']}</td></tr>"
-                f"<tr style='border-bottom: 1px solid #ffffff33;'><td style='padding: 8px;'><strong>Current Location</strong></td><td style='padding: 8px;'>{shipment_context['CurrentLocation']}</td></tr>"
-                f"<tr style='border-bottom: 1px solid #ffffff33;'><td style='padding: 8px;'><strong>Status</strong></td><td style='padding: 8px;'>{shipment_context['Status']}</td></tr>"
-                f"<tr style='border-bottom: 1px solid #ffffff33;'><td style='padding: 8px;'><strong>ETA</strong></td><td style='padding: 8px;'>{prediction_context.get('etaFormatted', 'Unknown')}</td></tr>"
-                f"</table>"
-            )
-            
-            reply = f"Here are the details for **{tracking_id}**:<br>{table_html}"
-        else:
-            reply = "To tell you where your order is and show its details, please enter a Tracking ID first."
-    elif matched_intent == "eta":
-        if shipment_context:
-            status_text = prediction_context.get('mlStatus', prediction_context.get('fuzzyStatus', 'Unknown'))
-            reply = f"Based on our AI prediction, your estimated time of arrival is **{prediction_context['etaFormatted']}**. Current conditions indicate: **{status_text}**."
-        else:
-            reply = "I need your Tracking ID to calculate the ETA."
-    elif matched_intent == "conditions":
-        if shipment_context:
-            reply = f"The route currently has **{shipment_context['WeatherCondition']}** weather and **{shipment_context['TrafficCongestion']}** traffic congestion. The AI factored this into your delays."
-        else:
-            reply = "I need a tracking ID to check the route conditions."
-    elif matched_intent == "dataset":
-        if ml_dataset is not None:
-            if 'show' in message and 'all' in message:
-                sample_df = ml_dataset.head(50)
-                # Apply inline styling to the pandas generated HTML table so it fits perfectly in the chatbot window
-                table_html = sample_df.to_html(classes="dataset-table", index=False, border=0)
-                # Wrap it in a scrollable div
-                wrapped_table = f"<div style='max-height: 400px; max-width: 100%; overflow: auto; border: 2px solid #000; border-radius: 10px; padding: 5px; margin-top: 10px; background: white;'>{table_html}</div>"
-                reply = f"Because the full dataset contains over {len(ml_dataset):,} records, here are the first 50 rows for you to explore:<br>{wrapped_table}"
-            elif 'rain' in message:
-                avg = ml_dataset[ml_dataset['WeatherCondition'] == 'Rain']['Time_Taken_Hours'].mean()
-                reply = f"According to my training data, the average delivery time during Rain is **{avg:.1f} hours**."
-            elif 'storm' in message:
-                avg = ml_dataset[ml_dataset['WeatherCondition'] == 'Storm']['Time_Taken_Hours'].mean()
-                reply = f"According to my training data, the average delivery time during Storms jumps to **{avg:.1f} hours**."
-            elif 'traffic' in message or 'jam' in message:
-                avg = ml_dataset[ml_dataset['TrafficCongestion'] == 'Jam']['Time_Taken_Hours'].mean()
-                reply = f"In heavy traffic (Jam), the average delivery time in my dataset is **{avg:.1f} hours**."
-            else:
-                reply = f"My neural network is trained on **{len(ml_dataset):,}** records from the Amazon Delivery dataset! Ask me to 'show all the dataset' or how rain/storms affect delivery times."
-        else:
-            reply = "My training dataset is currently offline, so I can't compute statistics right now."
-    else:
-        reply = "I'm sorry, I didn't quite catch that. You can ask me 'where is my package' or 'how does rain affect deliveries'."
+    # Prepare statistics context
+    stats_context = "Historical data unavailable."
+    if ml_dataset is not None:
+        avg_rain = ml_dataset[ml_dataset['WeatherCondition'] == 'Rain']['Time_Taken_Hours'].mean()
+        avg_storm = ml_dataset[ml_dataset['WeatherCondition'] == 'Storm']['Time_Taken_Hours'].mean()
+        avg_jam = ml_dataset[ml_dataset['TrafficCongestion'] == 'Jam']['Time_Taken_Hours'].mean()
+        stats_context = f"Avg delivery times from {len(ml_dataset)} records: Rain ({avg_rain:.1f}h), Storm ({avg_storm:.1f}h), Jam Traffic ({avg_jam:.1f}h)."
 
-    time.sleep(0.5) # Simulate AI thinking delay
+    # Prepare tracking context
+    tracking_info = "No package is currently being tracked."
+    if shipment_context:
+        tracking_info = (
+            f"Currently tracking ID: {tracking_id}. "
+            f"From {shipment_context['Origin']} to {shipment_context['Destination']}. "
+            f"Current Location: {shipment_context['CurrentLocation']}. "
+            f"Status: {shipment_context['Status']}. "
+            f"ETA: {prediction_context.get('etaFormatted', 'Unknown')}. "
+            f"Conditions: {shipment_context['WeatherCondition']} weather and {shipment_context['TrafficCongestion']} traffic."
+        )
+
+    # Groq System Prompt
+    system_prompt = (
+        "You are NexTrack AI, the intelligent assistant for NexTrack Logistics. "
+        "You provide real-time tracking updates, delivery statistics, and general logistics information. "
+        f"\n\nDATASET CONTEXT: {stats_context}"
+        f"\n\nCURRENT TRACKING CONTEXT: {tracking_info}"
+        "\n\nGUIDELINES:"
+        "- Be professional, efficient, and slightly futuristic."
+        "- Use markdown for bolding (e.g. **Status**)."
+        "- If a user provides a tracking ID that isn't in context, acknowledge it and suggest they check the ID."
+        "- Keep responses concise (max 3-4 sentences unless explaining statistics)."
+    )
+
+    try:
+        completion = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": message}
+            ],
+            temperature=0.7,
+            max_tokens=500
+        )
+        reply = completion.choices[0].message.content
+    except Exception as e:
+        print(f"Groq API Error: {e}")
+        reply = "I'm having trouble processing your request right now. Please try again in a moment."
+
     return jsonify({"reply": reply, "trackingId": tracking_id})
 
 if __name__ == '__main__':

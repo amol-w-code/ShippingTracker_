@@ -11,3 +11,5 @@ matplotlib
 kaggle
 gunicorn
 setuptools
+groq
+python-dotenv

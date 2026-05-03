@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
         toast.innerHTML = `<i data-lucide="alert-circle"></i> <span>${message}</span>`;
         toastContainer.appendChild(toast);
         
-        if (window.lucide) window.lucide.createIcons();
+        if (window.lucide) window.lucide.createIcons({ root: toast });
 
         setTimeout(() => {
             toast.classList.add('removing');
@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
             resHistory.innerHTML = timelineHtml;
 
             // Reset Lucide icons in the new elements
-            if (window.lucide) window.lucide.createIcons();
+            if (window.lucide) window.lucide.createIcons({ root: resHistory });
 
             // UI Enhancements
             document.body.classList.add('results-active');
@@ -406,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Re-initialize Lucide for the new icon
         if (window.lucide) {
-            window.lucide.createIcons();
+            window.lucide.createIcons({ root: msgDiv });
         }
     };
     
@@ -434,7 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.trackingId) {
                 currentTrackingId = data.trackingId;
-                chatWindow.classList.add('fullscreen');
+                // Removed auto-fullscreen to keep UI consistent
             }
             
             addMessage(data.reply, 'bot');

@@ -35,12 +35,19 @@ def calculate_fuzzy_eta(distance, weather_str, traffic_str):
 
     # Map linguistic variables to numeric Crisp Inputs (0-10 scale)
     weather_val = 0
-    if 'rain' in weather_str.lower(): weather_val = 5
-    elif 'storm' in weather_str.lower(): weather_val = 10
+    w_lower = weather_str.lower()
+    if 'rain' in w_lower: weather_val = 5
+    elif 'storm' in w_lower: weather_val = 10
+    elif 'snow' in w_lower: weather_val = 8
+    elif 'fog' in w_lower: weather_val = 4
+    elif 'clear' in w_lower: weather_val = 0
 
     traffic_val = 0
-    if 'medium' in traffic_str.lower(): traffic_val = 5
-    elif 'high' in traffic_str.lower(): traffic_val = 10
+    t_lower = traffic_str.lower()
+    if 'medium' in t_lower: traffic_val = 5
+    elif 'high' in t_lower: traffic_val = 8
+    elif 'jam' in t_lower: traffic_val = 10
+    elif 'low' in t_lower: traffic_val = 0
 
     delay_sim.input['weather'] = weather_val
     delay_sim.input['traffic'] = traffic_val
