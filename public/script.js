@@ -2,6 +2,45 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize Lucide Icons
     lucide.createIcons();
 
+    // --- Language Logic ---
+    const langSelect = document.getElementById('lang-select');
+    
+    function setLanguage(lang) {
+        const t = window.translations[lang] || window.translations['en'];
+        
+        // Update all elements with data-t attribute
+        document.querySelectorAll('[data-t]').forEach(el => {
+            const key = el.getAttribute('data-t');
+            if (t[key]) {
+                el.innerText = t[key];
+            }
+        });
+
+        // Update all placeholders with data-t-placeholder attribute
+        document.querySelectorAll('[data-t-placeholder]').forEach(el => {
+            const key = el.getAttribute('data-t-placeholder');
+            if (t[key]) {
+                el.placeholder = t[key];
+            }
+        });
+
+        // Save preference
+        localStorage.setItem('nextrack_lang', lang);
+        langSelect.value = lang;
+    }
+
+    if (langSelect) {
+        langSelect.addEventListener('change', (e) => {
+            setLanguage(e.target.value);
+        });
+
+        // Init with saved or browser language
+        const savedLang = localStorage.getItem('nextrack_lang') || 
+                         (navigator.language.startsWith('hi') ? 'hi' : 
+                          navigator.language.startsWith('es') ? 'es' : 'en');
+        setLanguage(savedLang);
+    }
+
     // --- Scrollytelling Logic ---
     const canvas = document.getElementById('scrolly-canvas');
     const context = canvas.getContext('2d');
@@ -263,10 +302,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const originTime = history.length > 0 ? history[0].timestamp : "Just now";
             const currentTime = history.length > 0 ? history[history.length - 1].timestamp : "Just now";
             
+            const t = window.translations[localStorage.getItem('nextrack_lang') || 'en'] || window.translations['en'];
+
             let timelineHtml = `
                 <li class="timeline-origin">
                     <div class="time">${originTime}</div>
-                    <div class="event">Package Registered</div>
+                    <div class="event">${t.timeline_registered || "Package Registered"}</div>
                     <div class="loc">${data.Origin}</div>
                 </li>
             `;
@@ -281,16 +322,16 @@ document.addEventListener('DOMContentLoaded', () => {
             
             timelineHtml += `
                 <li class="timeline-current">
-                    <div class="time">Arrived: ${currentTime}</div>
-                    <div class="event">Current Status: ${data.Status}</div>
+                    <div class="time">${t.timeline_arrived || "Arrived"}: ${currentTime}</div>
+                    <div class="event">${t.timeline_status || "Current Status"}: ${data.Status}</div>
                     <div class="loc">${data.CurrentLocation}</div>
                 </li>
             `;
             
             timelineHtml += `
                 <li class="timeline-estimated">
-                    <div class="time">${arrivalStr} (Estimated)</div>
-                    <div class="event">Expected Arrival</div>
+                    <div class="time">${arrivalStr} (${t.timeline_estimated || "Estimated"})</div>
+                    <div class="event">${t.timeline_expected || "Expected Arrival"}</div>
                     <div class="loc">${data.Destination}</div>
                 </li>
             `;
@@ -427,7 +468,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     message: message,
-                    trackingId: currentTrackingId
+                    trackingId: currentTrackingId,
+                    language: localStorage.getItem('nextrack_lang') || 'en'
                 })
             });
             const data = await response.json();

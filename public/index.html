@@ -16,9 +16,17 @@
     <!-- Floating Side Menu (Hidden by default) -->
     <nav class="side-menu" id="side-menu">
         <button id="logo-btn" class="menu-item logo-item">NexTrack <span>AI</span></button>
-        <a href="#services" class="menu-item">Services</a>
-        <a href="#about" class="menu-item">About</a>
-        <a href="#contact" class="menu-item">Contact</a>
+        <a href="#services" class="menu-item" data-t="nav_services">Services</a>
+        <a href="#about" class="menu-item" data-t="nav_about">About</a>
+        <a href="#contact" class="menu-item" data-t="nav_contact">Contact</a>
+        <div class="language-selector menu-item">
+            <i data-lucide="languages"></i>
+            <select id="lang-select">
+                <option value="en">English</option>
+                <option value="hi">हिन्दी</option>
+                <option value="es">Español</option>
+            </select>
+        </div>
     </nav>
 
     <!-- Background Animation Canvas -->
@@ -32,45 +40,45 @@
         <div class="scroll-content">
             <div class="step" id="step1">
                 <div class="glass-card">
-                    <h1>NexTrack Logistics</h1>
-                    <p>The future of global shipping, powered by intelligent AI and real-time data.</p>
+                    <h1 data-t="hero_title">NexTrack Logistics</h1>
+                    <p data-t="hero_subtitle">The future of global shipping, powered by intelligent AI and real-time data.</p>
                     <div class="scroll-indicator">
-                        <span>Scroll to explore</span>
+                        <span data-t="scroll_explore">Scroll to explore</span>
                         <div class="mouse"></div>
                     </div>
                 </div>
             </div>
             <div class="step" id="step2">
                 <div class="glass-card">
-                    <h2>Instant Scanning</h2>
-                    <p>Advanced optical sensors capture every dimension and detail in milliseconds.</p>
+                    <h2 data-t="step2_title">Instant Scanning</h2>
+                    <p data-t="step2_desc">Advanced optical sensors capture every dimension and detail in milliseconds.</p>
                 </div>
             </div>
             <div class="step" id="step3">
                 <div class="glass-card">
-                    <h2>AI-Powered Sorting</h2>
-                    <p>Proprietary fuzzy logic algorithms determine the optimal route based on live weather and traffic.
+                    <h2 data-t="step3_title">AI-Powered Sorting</h2>
+                    <p data-t="step3_desc">Proprietary fuzzy logic algorithms determine the optimal route based on live weather and traffic.
                     </p>
                 </div>
             </div>
             <div class="step" id="step4">
                 <div class="glass-card">
-                    <h2>Global Dispatch</h2>
-                    <p>A seamless journey across borders, tracked every second of the way.</p>
+                    <h2 data-t="step4_title">Global Dispatch</h2>
+                    <p data-t="step4_desc">A seamless journey across borders, tracked every second of the way.</p>
                 </div>
             </div>
             <div class="step" id="step5">
                 <div class="glass-card">
-                    <h2>Ready to Track?</h2>
-                    <p>Enter your Tracking ID below to see our AI in action.</p>
+                    <h2 data-t="step5_title">Ready to Track?</h2>
+                    <p data-t="step5_desc">Enter your Tracking ID below to see our AI in action.</p>
                     <form id="tracking-form" class="search-box">
                         <div class="input-wrapper-tracking">
-                            <input type="text" id="tracking-input" placeholder="Enter Tracking ID (e.g. SHP12345)" required autocomplete="off">
+                            <input type="text" id="tracking-input" placeholder="Enter Tracking ID (e.g. SHP12345)" required autocomplete="off" data-t-placeholder="tracking_placeholder">
                             <button type="button" id="clear-btn" class="clear-tracking-btn hidden">
                                 <i data-lucide="x"></i>
                             </button>
                         </div>
-                        <button type="submit" id="track-btn">Track Package</button>
+                        <button type="submit" id="track-btn" data-t="track_btn">Track Package</button>
                     </form>
                     <div id="error-message" class="error-msg hidden"></div>
                 </div>
@@ -84,11 +92,11 @@
         <div class="card result-header">
             <div class="status-title">
                 <i data-lucide="package-check"></i>
-                <h2>Status: <span id="res-status" class="status-badge">In Transit</span></h2>
+                <h2><span data-t="status_label">Status:</span> <span id="res-status" class="status-badge" data-t="status_transit">In Transit</span></h2>
             </div>
             <div class="route-info">
                 <div class="route-node">
-                    <p class="label"><i data-lucide="map-pin"></i> Origin</p>
+                    <p class="label"><i data-lucide="map-pin"></i> <span data-t="origin_label">Origin</span></p>
                     <p class="value" id="res-origin">Delhi</p>
                 </div>
                 <div class="route-track">
@@ -98,7 +106,7 @@
                     </div>
                 </div>
                 <div class="route-node">
-                    <p class="label"><i data-lucide="navigation"></i> Destination</p>
+                    <p class="label"><i data-lucide="navigation"></i> <span data-t="destination_label">Destination</span></p>
                     <p class="value" id="res-destination">Mumbai</p>
                 </div>
             </div>
@@ -107,43 +115,43 @@
         <div class="dashboard-grid">
             <!-- AI Prediction Card -->
             <div class="card ai-card">
-                <h3><i data-lucide="sparkles"></i> AI Predictive Engine</h3>
+                <h3><i data-lucide="sparkles"></i> <span data-t="ai_engine_title">AI Predictive Engine</span></h3>
                 <div class="eta-box">
                     <p class="eta-time" id="res-eta">2 Days</p>
                     <p class="eta-status" id="res-fuzzy-status">On Time</p>
                 </div>
-                <p class="disclaimer">Calculated using live weather and traffic data.</p>
+                <p class="disclaimer" data-t="ai_disclaimer">Calculated using live weather and traffic data.</p>
             </div>
 
             <!-- Conditions Card -->
             <div class="card conditions-card">
-                <h3><i data-lucide="activity"></i> Real-time Conditions</h3>
+                <h3><i data-lucide="activity"></i> <span data-t="conditions_title">Real-time Conditions</span></h3>
                 <div class="conditions-list">
                     <div class="cond-item">
                         <i data-lucide="map"></i>
                         <div>
-                            <span class="cond-label">Current Location</span>
+                            <span class="cond-label" data-t="cond_location">Current Location</span>
                             <span id="res-location" class="cond-value">Jaipur</span>
                         </div>
                     </div>
                     <div class="cond-item">
                         <i data-lucide="cloud-sun"></i>
                         <div>
-                            <span class="cond-label">Weather System</span>
+                            <span class="cond-label" data-t="cond_weather">Weather System</span>
                             <span id="res-weather" class="cond-value">Clear</span>
                         </div>
                     </div>
                     <div class="cond-item">
                         <i data-lucide="gauge"></i>
                         <div>
-                            <span class="cond-label">Traffic Density</span>
+                            <span class="cond-label" data-t="cond_traffic">Traffic Density</span>
                             <span id="res-traffic" class="cond-value">Medium</span>
                         </div>
                     </div>
                     <div class="cond-item">
                         <i data-lucide="route"></i>
                         <div>
-                            <span class="cond-label">Remaining Distance</span>
+                            <span class="cond-label" data-t="cond_distance">Remaining Distance</span>
                             <span id="res-distance" class="cond-value">1150 km</span>
                         </div>
                     </div>
@@ -153,7 +161,7 @@
 
         <!-- Timeline -->
         <div class="card timeline-card">
-            <h3><i data-lucide="history"></i> Journey Timeline</h3>
+            <h3><i data-lucide="history"></i> <span data-t="timeline_title">Journey Timeline</span></h3>
             <div class="timeline-wrapper">
                 <div class="timeline-line"></div>
                 <ul class="timeline" id="res-history">
@@ -178,19 +186,19 @@
                     </div>
                     <div class="bot-text">
                         <h4>NexTrack AI</h4>
-                        <span class="bot-status">Online & Ready</span>
+                        <span class="bot-status" data-t="chat_online">Online & Ready</span>
                     </div>
                 </div>
                 <button id="chat-close" class="close-btn"><i data-lucide="x"></i></button>
             </div>
             <div id="chat-body" class="chat-body">
-                <div class="message bot">
+                <div class="message bot" data-t="chat_welcome">
                     Hello! I'm your NexTrack AI assistant. Enter your Tracking ID to get started, or ask me anything about our services!
                 </div>
             </div>
             <div class="chat-footer">
                 <div class="input-wrapper">
-                    <input type="text" id="chat-input" placeholder="Ask NexTrack AI...">
+                    <input type="text" id="chat-input" placeholder="Ask NexTrack AI..." data-t-placeholder="chat_placeholder">
                     <button id="chat-send"><i data-lucide="send"></i></button>
                 </div>
             </div>
@@ -201,73 +209,74 @@
     <div id="services-page" class="overlay-page">
         <div class="overlay-content">
             <div class="overlay-header">
-                <h2><i data-lucide="layers"></i> Our Services</h2>
+                <h2><i data-lucide="layers"></i> <span data-t="services_title">Our Services</span></h2>
                 <button class="close-overlay">&times;</button>
             </div>
             <div class="overlay-body">
                 <div class="info-card">
-                    <h3><i data-lucide="zap"></i> Hyper-Fast Shipping</h3>
-                    <p>NexTrack AI predicts the most efficient routes in real-time, cutting delivery times by up to 40%. Our autonomous fleet ensures your parcels never stop moving, even during peak traffic hours.</p>
+                    <h3><i data-lucide="zap"></i> <span data-t="service1_title">Hyper-Fast Shipping</span></h3>
+                    <p data-t="service1_desc">NexTrack AI predicts the most efficient routes in real-time, cutting delivery times by up to 40%. Our autonomous fleet ensures your parcels never stop moving, even during peak traffic hours.</p>
                 </div>
                 <div class="info-card">
-                    <h3><i data-lucide="shield-check"></i> Secure Transit</h3>
-                    <p>Every package is protected by blockchain-verified tracking and smart sensors that monitor temperature, humidity, and impact throughout the entire journey.</p>
+                    <h3><i data-lucide="shield-check"></i> <span data-t="service2_title">Secure Transit</span></h3>
+                    <p data-t="service2_desc">Every package is protected by blockchain-verified tracking and smart sensors that monitor temperature, humidity, and impact throughout the entire journey.</p>
                 </div>
                 <div class="info-card">
-                    <h3><i data-lucide="globe"></i> Global Logistics</h3>
-                    <p>From the heart of the city to the most remote islands, our global network of AI-managed hubs ensures seamless border crossings and instant customs clearance.</p>
+                    <h3><i data-lucide="globe"></i> <span data-t="service3_title">Global Logistics</span></h3>
+                    <p data-t="service3_desc">From the heart of the city to the most remote islands, our global network of AI-managed hubs ensures seamless border crossings and instant customs clearance.</p>
                 </div>
             </div>
-            <button class="back-btn">Back to Home</button>
+            <button class="back-btn" data-t="back_home">Back to Home</button>
         </div>
     </div>
 
     <div id="about-page" class="overlay-page">
         <div class="overlay-content">
             <div class="overlay-header">
-                <h2><i data-lucide="info"></i> About NexTrack</h2>
+                <h2><i data-lucide="info"></i> <span data-t="about_title">About NexTrack</span></h2>
                 <button class="close-overlay">&times;</button>
             </div>
             <div class="overlay-body">
                 <div class="info-card">
-                    <h3><i data-lucide="lightbulb"></i> Innovation First</h3>
-                    <p>Founded in 2026, NexTrack Logistics was born from a simple idea: What if tracking wasn't just a status update, but a story? We've combined state-of-the-art computer vision with fuzzy logic AI to create the world's first interactive delivery ecosystem.</p>
+                    <h3><i data-lucide="lightbulb"></i> <span data-t="about1_title">Innovation First</span></h3>
+                    <p data-t="about1_desc">Founded in 2026, NexTrack Logistics was born from a simple idea: What if tracking wasn't just a status update, but a story? We've combined state-of-the-art computer vision with fuzzy logic AI to create the world's first interactive delivery ecosystem.</p>
                 </div>
                 <div class="info-card">
-                    <h3><i data-lucide="target"></i> Our Mission</h3>
-                    <p>We aim to eliminate the anxiety of "Where is my package?" by providing high-fidelity visual tracking and hyper-accurate delivery windows that adapt to the world around them.</p>
+                    <h3><i data-lucide="target"></i> <span data-t="about2_title">Our Mission</span></h3>
+                    <p data-t="about2_desc">We aim to eliminate the anxiety of "Where is my package?" by providing high-fidelity visual tracking and hyper-accurate delivery windows that adapt to the world around them.</p>
                 </div>
             </div>
-            <button class="back-btn">Back to Home</button>
+            <button class="back-btn" data-t="back_home">Back to Home</button>
         </div>
     </div>
 
     <div id="contact-page" class="overlay-page">
         <div class="overlay-content">
             <div class="overlay-header">
-                <h2><i data-lucide="headset"></i> Get in Touch</h2>
+                <h2><i data-lucide="headset"></i> <span data-t="contact_title">Get in Touch</span></h2>
                 <button class="close-overlay">&times;</button>
             </div>
             <div class="overlay-body">
                 <div class="info-card">
-                    <h3><i data-lucide="map-pin"></i> NexTrack Innovation Hub</h3>
+                    <h3><i data-lucide="map-pin"></i> <span data-t="contact1_title">NexTrack Innovation Hub</span></h3>
                     <p>Lovely Professional University, Jalandhar, Punjab<br>144411, India</p>
                 </div>
                 <div class="info-card">
-                    <h3><i data-lucide="mail"></i> Email Us</h3>
+                    <h3><i data-lucide="mail"></i> <span data-t="contact2_title">Email Us</span></h3>
                     <p>support@nextrack.ai<br>partners@nextrack.ai</p>
                 </div>
                 <div class="info-card">
-                    <h3><i data-lucide="phone-call"></i> Call Anytime</h3>
+                    <h3><i data-lucide="phone-call"></i> <span data-t="contact3_title">Call Anytime</span></h3>
                     <p>+91 (863871XXXX) NEXT-AI<br>Mon-Sun: 24/7 AI Support</p>
                 </div>
             </div>
-            <button class="back-btn">Back to Home</button>
+            <button class="back-btn" data-t="back_home">Back to Home</button>
         </div>
     </div>
 
     <div id="toast-container" class="toast-container"></div>
 
+    <script src="translations.js"></script>
     <script src="script.js"></script>
 </body>
 

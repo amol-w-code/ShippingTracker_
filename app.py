@@ -156,12 +156,16 @@ def chat():
         )
 
     # Groq System Prompt
+    language_map = {"en": "English", "hi": "Hindi", "es": "Spanish"}
+    target_lang = language_map.get(data.get('language', 'en'), "English")
+
     system_prompt = (
-        "You are NexTrack AI, the intelligent assistant for NexTrack Logistics. "
+        f"You are NexTrack AI, the intelligent assistant for NexTrack Logistics. Respond in {target_lang}. "
         "You provide real-time tracking updates, delivery statistics, and general logistics information. "
         f"\n\nDATASET CONTEXT: {stats_context}"
         f"\n\nCURRENT TRACKING CONTEXT: {tracking_info}"
         "\n\nGUIDELINES:"
+        f"- ALWAYS respond in {target_lang}."
         "- Be professional, efficient, and slightly futuristic."
         "- Use markdown for bolding (e.g. **Status**)."
         "- If a user provides a tracking ID that isn't in context, acknowledge it and suggest they check the ID."
