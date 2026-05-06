@@ -4,10 +4,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Language Logic ---
     const langSelect = document.getElementById('lang-select');
-    
+
     function setLanguage(lang) {
         const t = window.translations[lang] || window.translations['en'];
-        
+
         // Update all elements with data-t attribute
         document.querySelectorAll('[data-t]').forEach(el => {
             const key = el.getAttribute('data-t');
@@ -35,9 +35,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Init with saved or browser language
-        const savedLang = localStorage.getItem('nextrack_lang') || 
-                         (navigator.language.startsWith('hi') ? 'hi' : 
-                          navigator.language.startsWith('es') ? 'es' : 'en');
+        const savedLang = localStorage.getItem('nextrack_lang') ||
+            (navigator.language.startsWith('hi') ? 'hi' :
+                navigator.language.startsWith('es') ? 'es' : 'en');
         setLanguage(savedLang);
     }
 
@@ -122,12 +122,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 isTakingOff = false;
                 document.body.classList.add('results-active');
                 document.body.classList.add('landed');
-                
+
                 // Trigger UI updates
                 const resultsContainer = document.getElementById('tracking-results');
                 resultsContainer.classList.add('active');
                 resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                
+
             }
         } else if (!document.body.classList.contains('results-active')) {
             // Normal Scrollytelling: Smoothly interpolate to target frame based on scroll
@@ -175,14 +175,14 @@ document.addEventListener('DOMContentLoaded', () => {
         steps.forEach((step) => {
             const rect = step.getBoundingClientRect();
             const glassCard = step.querySelector('.glass-card');
-            
+
             if (rect.top < window.innerHeight * 0.7 && rect.bottom > window.innerHeight * 0.3) {
                 step.classList.add('active');
-                
+
                 if (glassCard) {
-                    const relativePos = (rect.top + rect.height/2) / window.innerHeight;
+                    const relativePos = (rect.top + rect.height / 2) / window.innerHeight;
                     const moveY = (relativePos - 0.5) * 20;
-                    glassCard.style.transform = `translateY(${moveY}px) rotate(${ (relativePos - 0.5) * 4 }deg)`;
+                    glassCard.style.transform = `translateY(${moveY}px) rotate(${(relativePos - 0.5) * 4}deg)`;
                 }
             } else {
                 step.classList.remove('active');
@@ -242,15 +242,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const resHistory = document.getElementById('res-history');
     const mapContainer = document.getElementById('map');
 
-    // City Coordinates Mapping
-    };
-    
+    // City Coordinates Mapping (Empty as requested, using API fallback)
+    const CITY_COORDS = {};
+    console.log("NexTrack: Script started, CITY_COORDS initialized.");
+
     // Geocoding Cache to avoid redundant API calls
     const COORDS_CACHE = { ...CITY_COORDS };
 
     async function getCoords(cityName) {
         if (COORDS_CACHE[cityName]) return COORDS_CACHE[cityName];
-        
+
         try {
             const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=1`);
             const data = await response.json();
@@ -262,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error("Geocoding error for", cityName, error);
         }
-        
+
         return [20.5937, 78.9629]; // Final fallback to center of India
     }
 
@@ -285,7 +286,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function updateMap(origin, current, destination) {
         initMap();
-        
+
         // Clear old markers
         mapMarkers.forEach(m => map.removeLayer(m));
         mapMarkers = [];
@@ -301,7 +302,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const loc of locs) {
             const point = await getCoords(loc.name);
             coords.push(point);
-            
+
             const customIcon = L.divIcon({
                 className: 'custom-div-icon',
                 html: `<div class="marker-pin ${loc.type}"></div>`,
@@ -312,329 +313,334 @@ document.addEventListener('DOMContentLoaded', () => {
             const marker = L.marker(point, { icon: customIcon })
                 .addTo(map)
                 .bindPopup(`<b>${loc.label}</b><br>${loc.name}`);
-            
+
             mapMarkers.push(marker);
-        });
+        }
 
-        // Draw route line
-        mapPolyline = L.polyline(coords, {
-            color: '#000',
-            weight: 4,
-            dashArray: '10, 10',
-            opacity: 0.6
-        }).addTo(map);
+// Draw route line
+mapPolyline = L.polyline(coords, {
+    color: '#000',
+    weight: 4,
+    dashArray: '10, 10',
+    opacity: 0.6
+}).addTo(map);
 
-        // Fit bounds
-        const bounds = L.latLngBounds(coords);
-        map.fitBounds(bounds, { padding: [50, 50] });
+// Fit bounds
+const bounds = L.latLngBounds(coords);
+map.fitBounds(bounds, { padding: [50, 50] });
     }
 
-    // Global state
-    let currentTrackingId = null;
+// Global state
+let currentTrackingId = null;
 
-    // --- Toast Notification ---
-    const toastContainer = document.getElementById('toast-container');
-    const showToast = (message) => {
-        const toast = document.createElement('div');
-        toast.className = 'toast';
-        toast.innerHTML = `<i data-lucide="alert-circle"></i> <span>${message}</span>`;
-        toastContainer.appendChild(toast);
-        
-        if (window.lucide) window.lucide.createIcons({ root: toast });
+// --- Toast Notification ---
+const toastContainer = document.getElementById('toast-container');
+const showToast = (message) => {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `<i data-lucide="alert-circle"></i> <span>${message}</span>`;
+    toastContainer.appendChild(toast);
 
-        setTimeout(() => {
-            toast.classList.add('removing');
-            setTimeout(() => toast.remove(), 500);
-        }, 3000);
-    };
+    if (window.lucide) window.lucide.createIcons({ root: toast });
 
-    trackForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = trackInput.value.trim();
-        if (!id) return;
+    setTimeout(() => {
+        toast.classList.add('removing');
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
+};
 
-        trackBtn.innerText = "Tracking...";
-        trackBtn.disabled = true;
-        
-        try {
-            const response = await fetch(`/api/track/${id}`);
-            const data = await response.json();
+trackForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = trackInput.value.trim();
+    if (!id) return;
 
-            if (!response.ok) {
-                throw new Error(data.error || "Unable to retrieve package data.");
-            }
+    trackBtn.innerText = "Tracking...";
+    trackBtn.disabled = true;
 
-            // Populate dashboard
-            currentTrackingId = id;
-            resStatus.innerText = data.Status;
-            resOrigin.innerText = data.Origin;
-            resDest.innerText = data.Destination;
-            resEta.innerText = data.prediction.etaFormatted;
-            resFuzzyStatus.innerText = data.prediction.displayStatus;
-            resLocation.innerText = data.CurrentLocation;
-            resWeather.innerText = data.WeatherCondition;
-            resTraffic.innerText = data.TrafficCongestion;
-            resDistance.innerText = `${data.DistanceRemaining} km`;
+    try {
+        const response = await fetch(`/api/track/${id}`);
+        const data = await response.json();
 
-            // Build a complete journey timeline: Origin -> History -> Current -> Destination
-            const history = [...data.HistoryEvents]; 
-            const now = new Date();
-            
-            // Calculate Estimated Arrival Time
-            const etaHours = data.prediction.etaHours || 0;
-            const arrivalDate = new Date(now.getTime() + etaHours * 60 * 60 * 1000);
-            const arrivalStr = arrivalDate.toLocaleString('en-US', { 
-                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true 
-            });
+        if (!response.ok) {
+            throw new Error(data.error || "Unable to retrieve package data.");
+        }
 
-            const originTime = history.length > 0 ? history[0].timestamp : "Just now";
-            const currentTime = history.length > 0 ? history[history.length - 1].timestamp : "Just now";
-            
-            const t = window.translations[localStorage.getItem('nextrack_lang') || 'en'] || window.translations['en'];
+        // Populate dashboard
+        currentTrackingId = id;
+        resStatus.innerText = data.Status;
+        resOrigin.innerText = data.Origin;
+        resDest.innerText = data.Destination;
+        resEta.innerText = data.prediction.etaFormatted;
+        resFuzzyStatus.innerText = data.prediction.displayStatus;
+        resLocation.innerText = data.CurrentLocation;
+        resWeather.innerText = data.WeatherCondition;
+        resTraffic.innerText = data.TrafficCongestion;
+        resDistance.innerText = `${data.DistanceRemaining} km`;
 
-            let timelineHtml = `
+        // Build a complete journey timeline: Origin -> History -> Current -> Destination
+        const history = [...data.HistoryEvents];
+        const now = new Date();
+
+        // Calculate Estimated Arrival Time
+        const etaHours = data.prediction.etaHours || 0;
+        const arrivalDate = new Date(now.getTime() + etaHours * 60 * 60 * 1000);
+        const arrivalStr = arrivalDate.toLocaleString('en-US', {
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+        });
+
+        const originTime = history.length > 0 ? history[0].timestamp : "Just now";
+        const currentTime = history.length > 0 ? history[history.length - 1].timestamp : "Just now";
+
+        const t = window.translations[localStorage.getItem('nextrack_lang') || 'en'] || window.translations['en'];
+
+        let timelineHtml = `
                 <li class="timeline-origin">
                     <div class="time">${originTime}</div>
                     <div class="event">${t.timeline_registered || "Package Registered"}</div>
                     <div class="loc">${data.Origin}</div>
                 </li>
             `;
-            
-            timelineHtml += history.map(evt => `
+
+        timelineHtml += history.map(evt => `
                 <li>
                     <div class="time">${evt.timestamp}</div>
                     <div class="event">${evt.event}</div>
                     <div class="loc">${evt.location}</div>
                 </li>
             `).join('');
-            
-            timelineHtml += `
+
+        timelineHtml += `
                 <li class="timeline-current">
                     <div class="time">${t.timeline_arrived || "Arrived"}: ${currentTime}</div>
                     <div class="event">${t.timeline_status || "Current Status"}: ${data.Status}</div>
                     <div class="loc">${data.CurrentLocation}</div>
                 </li>
             `;
-            
-            timelineHtml += `
+
+        timelineHtml += `
                 <li class="timeline-estimated">
                     <div class="time">${arrivalStr} (${t.timeline_estimated || "Estimated"})</div>
                     <div class="event">${t.timeline_expected || "Expected Arrival"}</div>
                     <div class="loc">${data.Destination}</div>
                 </li>
             `;
-            
-            resHistory.innerHTML = timelineHtml;
 
-            // Update Map
-            await updateMap(data.Origin, data.CurrentLocation, data.Destination);
+        resHistory.innerHTML = timelineHtml;
 
-            // Reset Lucide icons in the new elements
-            if (window.lucide) window.lucide.createIcons({ root: resHistory });
+        // Update Map
+        await updateMap(data.Origin, data.CurrentLocation, data.Destination);
 
-            // UI Enhancements
-            document.body.classList.add('results-active');
-            document.body.classList.add('landed');
-            
-            // Show and scroll to results container
-            resultsContainer.classList.remove('hidden');
-            resultsContainer.classList.add('active');
-            
-            // Fix map layout if it was rendered while hidden
-            if (map) {
-                setTimeout(async () => {
-                    map.invalidateSize();
-                    const coords = await Promise.all([
-                        getCoords(data.Origin),
-                        getCoords(data.CurrentLocation),
-                        getCoords(data.Destination)
-                    ]);
-                    map.fitBounds(L.latLngBounds(coords), { padding: [50, 50] });
-                }, 100);
-            }
-            
-            resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Reset Lucide icons in the new elements
+        if (window.lucide) window.lucide.createIcons({ root: resHistory });
 
-        } catch (err) {
-            showToast(err.message);
-        } finally {
-            trackBtn.innerText = "Track Package";
-            trackBtn.disabled = false;
+        // UI Enhancements
+        document.body.classList.add('results-active');
+        document.body.classList.add('landed');
+
+        // Show and scroll to results container
+        resultsContainer.classList.remove('hidden');
+        resultsContainer.classList.add('active');
+
+        // Fix map layout if it was rendered while hidden
+        if (map) {
+            setTimeout(async () => {
+                map.invalidateSize();
+                const coords = await Promise.all([
+                    getCoords(data.Origin),
+                    getCoords(data.CurrentLocation),
+                    getCoords(data.Destination)
+                ]);
+                map.fitBounds(L.latLngBounds(coords), { padding: [50, 50] });
+            }, 100);
         }
-    });
 
-    // --- Clear Tracking Logic ---
-    const clearBtn = document.getElementById('clear-btn');
-    
-    // Initial state check
-    if (trackInput.value.trim().length === 0) {
+        resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    } catch (err) {
+        showToast(err.message);
+    } finally {
+        trackBtn.innerText = "Track Package";
+        trackBtn.disabled = false;
+    }
+});
+
+// --- Clear Tracking Logic ---
+const clearBtn = document.getElementById('clear-btn');
+
+// Initial state check
+if (trackInput.value.trim().length === 0) {
+    clearBtn.classList.add('hidden');
+    trackInput.classList.remove('has-content');
+}
+
+// Show/Hide clear button and adjust padding based on input
+trackInput.addEventListener('input', () => {
+    if (trackInput.value.trim().length > 0) {
+        clearBtn.classList.remove('hidden');
+        trackInput.classList.add('has-content');
+    } else {
         clearBtn.classList.add('hidden');
         trackInput.classList.remove('has-content');
     }
+});
 
-    // Show/Hide clear button and adjust padding based on input
-    trackInput.addEventListener('input', () => {
-        if (trackInput.value.trim().length > 0) {
-            clearBtn.classList.remove('hidden');
-            trackInput.classList.add('has-content');
-        } else {
-            clearBtn.classList.add('hidden');
-            trackInput.classList.remove('has-content');
-        }
-    });
+clearBtn.addEventListener('click', () => {
+    // Just clear the input and UI state, don't move or hide results
+    trackInput.value = '';
+    clearBtn.classList.add('hidden');
+    trackInput.classList.remove('has-content');
+    errorMsg.classList.add('hidden');
+    trackInput.focus();
+});
 
-    clearBtn.addEventListener('click', () => {
-        // Just clear the input and UI state, don't move or hide results
-        trackInput.value = '';
-        clearBtn.classList.add('hidden');
-        trackInput.classList.remove('has-content');
-        errorMsg.classList.add('hidden');
-        trackInput.focus();
-    });
+// --- Logo Navigation Logic ---
+const logoBtn = document.getElementById('logo-btn');
+logoBtn.addEventListener('click', () => {
+    // If results are open, reset everything and go to Step 1
+    if (document.body.classList.contains('results-active')) {
+        document.body.classList.remove('results-active');
+        resultsContainer.classList.remove('active');
+        resultsContainer.classList.add('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+    }
 
-    // --- Logo Navigation Logic ---
-    const logoBtn = document.getElementById('logo-btn');
-    logoBtn.addEventListener('click', () => {
-        // If results are open, reset everything and go to Step 1
-        if (document.body.classList.contains('results-active')) {
-            document.body.classList.remove('results-active');
-            resultsContainer.classList.remove('active');
-            resultsContainer.classList.add('hidden');
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            return;
-        }
-        
-        // If in Step 5 (landed), go to Step 1
-        if (document.body.classList.contains('landed')) {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } else {
-            // Otherwise, go to Step 5
-            const step5 = document.getElementById('step5');
-            step5.scrollIntoView({ behavior: 'smooth' });
-        }
-    });
+    // If in Step 5 (landed), go to Step 1
+    if (document.body.classList.contains('landed')) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+        // Otherwise, go to Step 5
+        const step5 = document.getElementById('step5');
+        step5.scrollIntoView({ behavior: 'smooth' });
+    }
+});
 
-    // --- Chatbot Logic ---
-    const chatToggle = document.getElementById('chatbot-toggle');
-    const chatWindow = document.getElementById('chat-window');
-    const chatClose = document.getElementById('chat-close');
-    const chatInput = document.getElementById('chat-input');
-    const chatSend = document.getElementById('chat-send');
-    const chatBody = document.getElementById('chat-body');
+// --- Chatbot Logic ---
+const chatToggle = document.getElementById('chatbot-toggle');
+const chatWindow = document.getElementById('chat-window');
+const chatClose = document.getElementById('chat-close');
+const chatInput = document.getElementById('chat-input');
+const chatSend = document.getElementById('chat-send');
+const chatBody = document.getElementById('chat-body');
 
-    chatToggle.addEventListener('click', () => {
-        chatWindow.classList.toggle('hidden');
-        if (!chatWindow.classList.contains('hidden')) {
-            chatInput.focus();
-        }
-    });
+chatToggle.addEventListener('click', () => {
+    chatWindow.classList.toggle('hidden');
+    if (!chatWindow.classList.contains('hidden')) {
+        chatInput.focus();
+    }
+});
 
-    chatClose.addEventListener('click', () => {
-        chatWindow.classList.add('hidden');
-        chatWindow.classList.remove('fullscreen');
-    });
+chatClose.addEventListener('click', () => {
+    chatWindow.classList.add('hidden');
+    chatWindow.classList.remove('fullscreen');
+});
 
-    const addMessage = (message, sender) => {
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('message', sender);
-        
-        let formattedMsg = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
-        
-        // Add icons for a more premium feel
-        const iconName = sender === 'bot' ? 'bot' : 'user';
-        msgDiv.innerHTML = `
+const addMessage = (message, sender) => {
+    const msgDiv = document.createElement('div');
+    msgDiv.classList.add('message', sender);
+
+    let formattedMsg = message.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>');
+
+    // Add icons for a more premium feel
+    const iconName = sender === 'bot' ? 'bot' : 'user';
+    msgDiv.innerHTML = `
             <div class="message-icon"><i data-lucide="${iconName}"></i></div>
             <div class="message-text">${formattedMsg}</div>
         `;
-        
-        chatBody.appendChild(msgDiv);
-        chatBody.scrollTop = chatBody.scrollHeight;
-        
-        // Re-initialize Lucide for the new icon
-        if (window.lucide) {
-            window.lucide.createIcons({ root: msgDiv });
-        }
-    };
-    
-    // Add global access to addMessage for the animation loop
-    window.addBotMessage = (msg) => addMessage(msg, 'bot');
 
-    const handleSendMessage = async () => {
-        const message = chatInput.value.trim();
-        if (!message) return;
+    chatBody.appendChild(msgDiv);
+    chatBody.scrollTop = chatBody.scrollHeight;
 
-        addMessage(message, 'user');
-        chatInput.value = '';
-        chatInput.disabled = true;
+    // Re-initialize Lucide for the new icon
+    if (window.lucide) {
+        window.lucide.createIcons({ root: msgDiv });
+    }
+};
 
-        try {
-            const response = await fetch('/api/chat', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    message: message,
-                    trackingId: currentTrackingId,
-                    language: localStorage.getItem('nextrack_lang') || 'en'
-                })
-            });
-            const data = await response.json();
-            
-            if (data.trackingId) {
-                currentTrackingId = data.trackingId;
-            }
+// Add global access to addMessage for the animation loop
+window.addBotMessage = (msg) => addMessage(msg, 'bot');
 
-            if (data.fullscreen) {
-                chatWindow.classList.add('fullscreen');
-            }
-            
-            addMessage(data.reply, 'bot');
-        } catch (err) {
-            addMessage("Sorry, I'm having trouble connecting to the server.", 'bot');
-        } finally {
-            chatInput.disabled = false;
-            chatInput.focus();
-        }
-    };
+const handleSendMessage = async () => {
+    const message = chatInput.value.trim();
+    if (!message) return;
 
-    chatSend.addEventListener('click', handleSendMessage);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSendMessage();
-    });
+    addMessage(message, 'user');
+    chatInput.value = '';
+    chatInput.disabled = true;
 
-    // --- Overlay Navigation Logic ---
-    const menuLinks = document.querySelectorAll('.side-menu a');
-    const overlayPages = document.querySelectorAll('.overlay-page');
-    const closeOverlayBtns = document.querySelectorAll('.close-overlay, .back-btn');
-
-    menuLinks.forEach(link => {
-        link.addEventListener('click', (e) => {
-            e.preventDefault();
-            const targetId = link.getAttribute('href').substring(1); 
-            const targetPage = document.getElementById(`${targetId}-page`);
-            if (targetPage) {
-                targetPage.classList.add('active');
-                document.body.classList.add('no-scroll');
-            }
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                message: message,
+                trackingId: currentTrackingId,
+                language: localStorage.getItem('nextrack_lang') || 'en'
+            })
         });
-    });
+        const data = await response.json();
 
-    closeOverlayBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            overlayPages.forEach(page => page.classList.remove('active'));
+        if (data.trackingId) {
+            currentTrackingId = data.trackingId;
+        }
+
+        if (data.fullscreen) {
+            chatWindow.classList.add('fullscreen');
+        }
+
+        addMessage(data.reply, 'bot');
+    } catch (err) {
+        addMessage("Sorry, I'm having trouble connecting to the server.", 'bot');
+    } finally {
+        chatInput.disabled = false;
+        chatInput.focus();
+    }
+};
+
+chatSend.addEventListener('click', handleSendMessage);
+chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') handleSendMessage();
+});
+
+// --- Overlay Navigation Logic ---
+const menuLinks = document.querySelectorAll('.side-menu a');
+const overlayPages = document.querySelectorAll('.overlay-page');
+const closeOverlayBtns = document.querySelectorAll('.close-overlay, .back-btn');
+
+menuLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href').substring(1);
+        const targetPage = document.getElementById(`${targetId}-page`);
+        if (targetPage) {
+            targetPage.classList.add('active');
+            document.body.classList.add('no-scroll');
+        }
+    });
+});
+
+closeOverlayBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        overlayPages.forEach(page => page.classList.remove('active'));
+        document.body.classList.remove('no-scroll');
+        updateScrollState();
+    });
+});
+
+overlayPages.forEach(page => {
+    page.addEventListener('click', (e) => {
+        if (e.target === page) {
+            page.classList.remove('active');
             document.body.classList.remove('no-scroll');
             updateScrollState();
-        });
+        }
     });
-
-    overlayPages.forEach(page => {
-        page.addEventListener('click', (e) => {
-            if (e.target === page) {
-                page.classList.remove('active');
-                document.body.classList.remove('no-scroll');
-                updateScrollState();
-            }
-        });
-    });
-
-    // Chatbot will only open on manual click or after a cinematic flight completion
 });
+
+// Chatbot will only open on manual click or after a cinematic flight completion
+
+    // Initial UI update to show content
+    updateScrollState();
+    console.log("NexTrack: Script execution completed.");
+});
+
