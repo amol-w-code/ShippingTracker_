@@ -250,21 +250,37 @@ document.addEventListener('DOMContentLoaded', () => {
     const COORDS_CACHE = { ...CITY_COORDS };
 
     async function getCoords(cityName) {
+        if (!cityName) return [20.5937, 78.9629];
         if (COORDS_CACHE[cityName]) return COORDS_CACHE[cityName];
 
+        console.log(`NexTrack: Fetching coordinates for ${cityName}...`);
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=1`);
+            // Nominatim requires a User-Agent or Referer header
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=1`, {
+                headers: {
+                    'User-Agent': 'NexTrack-Logistics-App/1.0'
+                }
+            });
+            
+            if (response.status === 429) {
+                console.warn("NexTrack: Rate limited by geocoding API. Using fallback.");
+                return [20.5937, 78.9629];
+            }
+
             const data = await response.json();
             if (data && data.length > 0) {
                 const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                COORDS_CACHE[cityName] = coords; // Cache for future use
+                COORDS_CACHE[cityName] = coords;
+                console.log(`NexTrack: Found coords for ${cityName}:`, coords);
                 return coords;
+            } else {
+                console.warn(`NexTrack: No results found for ${cityName}.`);
             }
         } catch (error) {
-            console.error("Geocoding error for", cityName, error);
+            console.error("NexTrack: Geocoding error for", cityName, error);
         }
 
-        return [20.5937, 78.9629]; // Final fallback to center of India
+        return [20.5937, 78.9629];
     }
 
     let map = null;
@@ -302,6 +318,9 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const loc of locs) {
             const point = await getCoords(loc.name);
             coords.push(point);
+            
+            // Small delay to respect Nominatim's rate limit
+            await new Promise(r => setTimeout(r, 300));
 
             const customIcon = L.divIcon({
                 className: 'custom-div-icon',
@@ -443,14 +462,8 @@ trackForm.addEventListener('submit', async (e) => {
 
         // Fix map layout if it was rendered while hidden
         if (map) {
-            setTimeout(async () => {
+            setTimeout(() => {
                 map.invalidateSize();
-                const coords = await Promise.all([
-                    getCoords(data.Origin),
-                    getCoords(data.CurrentLocation),
-                    getCoords(data.Destination)
-                ]);
-                map.fitBounds(L.latLngBounds(coords), { padding: [50, 50] });
             }, 100);
         }
 
