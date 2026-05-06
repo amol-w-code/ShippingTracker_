@@ -240,6 +240,94 @@ document.addEventListener('DOMContentLoaded', () => {
     const resTraffic = document.getElementById('res-traffic');
     const resDistance = document.getElementById('res-distance');
     const resHistory = document.getElementById('res-history');
+    const mapContainer = document.getElementById('map');
+
+    // City Coordinates Mapping
+    };
+    
+    // Geocoding Cache to avoid redundant API calls
+    const COORDS_CACHE = { ...CITY_COORDS };
+
+    async function getCoords(cityName) {
+        if (COORDS_CACHE[cityName]) return COORDS_CACHE[cityName];
+        
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cityName)}&limit=1`);
+            const data = await response.json();
+            if (data && data.length > 0) {
+                const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
+                COORDS_CACHE[cityName] = coords; // Cache for future use
+                return coords;
+            }
+        } catch (error) {
+            console.error("Geocoding error for", cityName, error);
+        }
+        
+        return [20.5937, 78.9629]; // Final fallback to center of India
+    }
+
+    let map = null;
+    let mapMarkers = [];
+    let mapPolyline = null;
+
+    function initMap() {
+        if (map) return;
+        map = L.map('map', {
+            scrollWheelZoom: false,
+            dragging: !L.Browser.mobile,
+            tap: !L.Browser.mobile
+        }).setView([20.5937, 78.9629], 5); // Center of India
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+    }
+
+    async function updateMap(origin, current, destination) {
+        initMap();
+        
+        // Clear old markers
+        mapMarkers.forEach(m => map.removeLayer(m));
+        mapMarkers = [];
+        if (mapPolyline) map.removeLayer(mapPolyline);
+
+        const coords = [];
+        const locs = [
+            { name: origin, type: 'origin', label: 'Registered' },
+            { name: current, type: 'current', label: 'Current Location' },
+            { name: destination, type: 'destination', label: 'Destination' }
+        ];
+
+        for (const loc of locs) {
+            const point = await getCoords(loc.name);
+            coords.push(point);
+            
+            const customIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class="marker-pin ${loc.type}"></div>`,
+                iconSize: [30, 42],
+                iconAnchor: [15, 42]
+            });
+
+            const marker = L.marker(point, { icon: customIcon })
+                .addTo(map)
+                .bindPopup(`<b>${loc.label}</b><br>${loc.name}`);
+            
+            mapMarkers.push(marker);
+        });
+
+        // Draw route line
+        mapPolyline = L.polyline(coords, {
+            color: '#000',
+            weight: 4,
+            dashArray: '10, 10',
+            opacity: 0.6
+        }).addTo(map);
+
+        // Fit bounds
+        const bounds = L.latLngBounds(coords);
+        map.fitBounds(bounds, { padding: [50, 50] });
+    }
 
     // Global state
     let currentTrackingId = null;
@@ -338,6 +426,9 @@ document.addEventListener('DOMContentLoaded', () => {
             
             resHistory.innerHTML = timelineHtml;
 
+            // Update Map
+            await updateMap(data.Origin, data.CurrentLocation, data.Destination);
+
             // Reset Lucide icons in the new elements
             if (window.lucide) window.lucide.createIcons({ root: resHistory });
 
@@ -348,6 +439,20 @@ document.addEventListener('DOMContentLoaded', () => {
             // Show and scroll to results container
             resultsContainer.classList.remove('hidden');
             resultsContainer.classList.add('active');
+            
+            // Fix map layout if it was rendered while hidden
+            if (map) {
+                setTimeout(async () => {
+                    map.invalidateSize();
+                    const coords = await Promise.all([
+                        getCoords(data.Origin),
+                        getCoords(data.CurrentLocation),
+                        getCoords(data.Destination)
+                    ]);
+                    map.fitBounds(L.latLngBounds(coords), { padding: [50, 50] });
+                }, 100);
+            }
+            
             resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
         } catch (err) {

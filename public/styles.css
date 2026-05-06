@@ -1274,3 +1274,97 @@ body.landed #step5 p {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* --- MAP STYLING --- */
+.map-card {
+    padding: 0;
+    overflow: hidden;
+    background: #fff;
+    border: 4px solid #000;
+}
+
+.map-card h3 {
+    padding: 1.5rem 1.5rem 0.5rem 1.5rem;
+    margin: 0;
+}
+
+#map {
+    width: 100%;
+    height: 350px;
+    border-top: 4px solid #000;
+    border-bottom: 4px solid #000;
+    z-index: 1;
+}
+
+.map-legend {
+    padding: 1rem 1.5rem;
+    display: flex;
+    gap: 1.5rem;
+    background: #f9f9f9;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.marker-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #000;
+}
+
+.marker-dot.origin { background: #ccc; }
+.marker-dot.current { background: #4ade80; }
+.marker-dot.destination { background: #8b5cf6; }
+
+/* Custom Leaflet Marker Styling */
+.custom-div-icon {
+    background: none;
+    border: none;
+}
+
+.marker-pin {
+    width: 30px;
+    height: 30px;
+    border-radius: 50% 50% 50% 0;
+    background: var(--primary);
+    position: absolute;
+    transform: rotate(-45deg);
+    left: 50%;
+    top: 50%;
+    margin: -15px 0 0 -15px;
+    border: 3px solid #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+}
+
+.marker-pin::after {
+    content: '';
+    width: 12px;
+    height: 12px;
+    background: #fff;
+    position: absolute;
+    border-radius: 50%;
+    border: 2px solid #000;
+}
+
+.marker-pin.origin { background: #ccc; }
+.marker-pin.current { background: #4ade80; animation: pulse-marker 2s infinite; }
+.marker-pin.destination { background: #8b5cf6; }
+
+@keyframes pulse-marker {
+    0% { transform: rotate(-45deg) scale(1); }
+    50% { transform: rotate(-45deg) scale(1.1); }
+    100% { transform: rotate(-45deg) scale(1); }
+}
+
+.leaflet-container {
+    font-family: 'Fredoka', sans-serif !important;
+}

@@ -7,6 +7,8 @@
     <title>NexTrack | AI Delivery Tracking</title>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 
@@ -167,6 +169,15 @@
                 <ul class="timeline" id="res-history">
                     <!-- Dynamically populated -->
                 </ul>
+            </div>
+        <!-- Journey Map -->
+        <div class="card map-card">
+            <h3><i data-lucide="map"></i> Live Transit Map</h3>
+            <div id="map"></div>
+            <div class="map-legend">
+                <div class="legend-item"><span class="marker-dot origin"></span> Registered</div>
+                <div class="legend-item"><span class="marker-dot current"></span> Current</div>
+                <div class="legend-item"><span class="marker-dot destination"></span> Destination</div>
             </div>
         </div>
     </section>
