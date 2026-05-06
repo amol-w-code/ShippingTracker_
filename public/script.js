@@ -337,16 +337,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
 // Draw route line
-mapPolyline = L.polyline(coords, {
-    color: '#000',
-    weight: 4,
-    dashArray: '10, 10',
-    opacity: 0.6
-}).addTo(map);
+        // Draw route line
+        mapPolyline = L.polyline(coords, {
+            color: '#000',
+            weight: 4,
+            dashArray: '10, 10',
+            opacity: 0.6
+        }).addTo(map);
 
-// Fit bounds
-const bounds = L.latLngBounds(coords);
-map.fitBounds(bounds, { padding: [50, 50] });
+        // Auto-fit to the entire journey
+        if (coords.length > 0) {
+            const bounds = L.latLngBounds(coords);
+            map.fitBounds(bounds, { padding: [50, 50], animate: true });
+        }
     }
 
 // Global state
@@ -460,11 +463,21 @@ trackForm.addEventListener('submit', async (e) => {
         resultsContainer.classList.remove('hidden');
         resultsContainer.classList.add('active');
 
-        // Fix map layout if it was rendered while hidden
+        // Fix map layout and auto-fit to the entire journey
         if (map) {
-            setTimeout(() => {
+            setTimeout(async () => {
                 map.invalidateSize();
-            }, 100);
+                const startPoint = await getCoords(data.Origin);
+                const currentPoint = await getCoords(data.CurrentLocation);
+                const endPoint = await getCoords(data.Destination);
+                
+                const bounds = L.latLngBounds([startPoint, currentPoint, endPoint]);
+                map.fitBounds(bounds, { 
+                    padding: [50, 50],
+                    animate: true,
+                    duration: 1.0
+                });
+            }, 400); // Wait for the results-container transition
         }
 
         resultsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
